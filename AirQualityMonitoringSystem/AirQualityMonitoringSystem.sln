@@ -1,9 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
-VisualStudioVersion = 17.14.37111.16 d17.14
+VisualStudioVersion = 17.14.37111.16
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AirQualityService", "AirQualityService\AirQualityService.csproj", "{8956794A-378C-47D6-B775-F84605BC5318}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AirQualityInformationSystem", "AirQualityInformationSystem\AirQualityInformationSystem.csproj", "{6B6B6371-44F0-45EF-A1CD-0A726F96330F}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "AirQualityStatistics", "AirQualityStatistics\AirQualityStatistics.csproj", "{FB01BA6E-38B4-4381-BA66-9A15BBD8C26A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -15,6 +19,14 @@ Global
 		{8956794A-378C-47D6-B775-F84605BC5318}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{8956794A-378C-47D6-B775-F84605BC5318}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{8956794A-378C-47D6-B775-F84605BC5318}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6B6B6371-44F0-45EF-A1CD-0A726F96330F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6B6B6371-44F0-45EF-A1CD-0A726F96330F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6B6B6371-44F0-45EF-A1CD-0A726F96330F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6B6B6371-44F0-45EF-A1CD-0A726F96330F}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB01BA6E-38B4-4381-BA66-9A15BBD8C26A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB01BA6E-38B4-4381-BA66-9A15BBD8C26A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB01BA6E-38B4-4381-BA66-9A15BBD8C26A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB01BA6E-38B4-4381-BA66-9A15BBD8C26A}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
