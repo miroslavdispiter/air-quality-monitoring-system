@@ -5,34 +5,24 @@ namespace AirQualityInformationSystem.Helpers
 {
     public class RelayCommand : ICommand
     {
-        private readonly Action<object> _execute;
-        private readonly Predicate<object> _canExecute;
+        private readonly Action execute;
+        private readonly Func<bool> canExecute;
 
-        public RelayCommand(Action<object> execute, Predicate<object> canExecute = null)
+        public RelayCommand(Action execute, Func<bool> canExecute = null)
         {
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-            _canExecute = canExecute;
+            this.execute = execute;
+            this.canExecute = canExecute;
         }
 
         public bool CanExecute(object parameter)
-        {
-            return _canExecute == null || _canExecute(parameter);
-        }
+            => canExecute == null || canExecute();
 
         public void Execute(object parameter)
-        {
-            _execute(parameter);
-        }
+            => execute();
 
-        public event EventHandler CanExecuteChanged
-        {
-            add { CommandManager.RequerySuggested += value; }
-            remove { CommandManager.RequerySuggested -= value; }
-        }
+        public event EventHandler CanExecuteChanged;
 
         public void RaiseCanExecuteChanged()
-        {
-            CommandManager.InvalidateRequerySuggested();
-        }
+            => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
     }
 }

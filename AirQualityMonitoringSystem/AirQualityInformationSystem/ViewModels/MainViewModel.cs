@@ -1,445 +1,490 @@
-﻿using AirQualityInformationSystem.Helpers;
+﻿using AirQualityInformationSystem.Commands;
+using AirQualityInformationSystem.Helpers;
 using AirQualityInformationSystem.Models;
+using AirQualityInformationSystem.Repositories;
 using AirQualityInformationSystem.Services;
+using AirQualityInformationSystem.Services.Logging;
+using AirQualityInformationSystem.Services.Persistence;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
-using LiveChartsCore.SkiaSharpView.Painting;
-using SkiaSharp;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Threading;
 using System.Windows;
-using System.Windows.Input;
-using System.Windows.Media;
+using System.Windows.Threading;
 
 namespace AirQualityInformationSystem.ViewModels
 {
     public class MainViewModel : BaseViewModel
     {
-        private readonly IDataService _dataService;
-        private readonly IPersistenceService _persistenceService;
-        private readonly ILoggingService _loggingService;
-        private readonly UndoRedoManager _undoRedoManager;
-        private readonly StateSimulationService _stateSimulationService;
-        private readonly Dictionary<Guid, CancellationTokenSource> _simulationTokens;
+        //using LiveChartsCore.SkiaSharpView.Painting;
+        //using SkiaSharp;
+        private readonly MonitoringStationRepository stationRepo;
+        private readonly AirQualityRepository readingRepo;
+        private readonly CommandManager commandManager;
+        private readonly PersistenceContext persistenceContext;
+        private readonly LoggerService logger;
+        private readonly StateSimulationService simulationService;
+        private readonly DispatcherTimer chartUpdateTimer;
 
-        private ObservableCollection<MonitoringStation> _stations;
-        private ObservableCollection<AirQualityReading> _readings;
-        private ObservableCollection<MonitoringStation> _filteredStations;
-        private ObservableCollection<AirQualityReading> _filteredReadings;
+        #region Observable Collections
 
-        private MonitoringStation _selectedStation;
-        private AirQualityReading _selectedReading;
+        public ObservableCollection<MonitoringStation> Stations { get; set; }
+        public ObservableCollection<AirQualityReading> Readings { get; set; }
 
-        private string _newStationName;
-        private string _newStationCity;
-        private string _newStationDistrict;
-        private string _newStationLatitude;
-        private string _newStationLongitude;
-
-        private string _newReadingStationId;
-        private DateTime _newReadingTime = DateTime.Now;
-        private string _newReadingPM25;
-        private string _newReadingNO2;
-        private string _newReadingOzone;
-
-        // Search filters
-        private string _stationSearchText;
-        private string _readingSearchText;
-
-        // Charts
-        private ObservableCollection<ISeries> _stateSeries;
-
-        // Commands
-        public ICommand AddStationCommand { get; private set; }
-        public ICommand UpdateStationCommand { get; private set; }
-        public ICommand DeleteStationCommand { get; private set; }
-        public ICommand AddReadingCommand { get; private set; }
-        public ICommand UpdateReadingCommand { get; private set; }
-        public ICommand DeleteReadingCommand { get; private set; }
-        public ICommand UndoCommand { get; private set; }
-        public ICommand RedoCommand { get; private set; }
-        public ICommand SaveDataCommand { get; private set; }
-        public ICommand LoadDataCommand { get; private set; }
-        public ICommand SearchStationsCommand { get; private set; }
-        public ICommand SearchReadingsCommand { get; private set; }
-
-        public MainViewModel()
-        {
-            _dataService = new DataService();
-            _persistenceService = new PersistenceService();
-            _loggingService = new LoggingService();
-            _undoRedoManager = new UndoRedoManager();
-            _stateSimulationService = new StateSimulationService();
-            _simulationTokens = new Dictionary<Guid, CancellationTokenSource>();
-
-            _stations = new ObservableCollection<MonitoringStation>();
-            _readings = new ObservableCollection<AirQualityReading>();
-            _filteredStations = new ObservableCollection<MonitoringStation>();
-            _filteredReadings = new ObservableCollection<AirQualityReading>();
-
-            InitializeCommands();
-            LoadInitialData();
-            InitializeChart();
-        }
-
-        #region Properties
-
-        public ObservableCollection<MonitoringStation> Stations
-        {
-            get => _stations;
-            set => SetProperty(ref _stations, value);
-        }
-
-        public ObservableCollection<AirQualityReading> Readings
-        {
-            get => _readings;
-            set => SetProperty(ref _readings, value);
-        }
-
+        private ObservableCollection<MonitoringStation> filteredStations;
         public ObservableCollection<MonitoringStation> FilteredStations
         {
-            get => _filteredStations;
-            set => SetProperty(ref _filteredStations, value);
+            get => filteredStations;
+            set { filteredStations = value; OnPropertyChanged(); }
         }
 
+        private ObservableCollection<AirQualityReading> filteredReadings;
         public ObservableCollection<AirQualityReading> FilteredReadings
         {
-            get => _filteredReadings;
-            set => SetProperty(ref _filteredReadings, value);
+            get => filteredReadings;
+            set { filteredReadings = value; OnPropertyChanged(); }
         }
 
+        #endregion
+
+        #region Selected Items
+
+        private MonitoringStation selectedStation;
         public MonitoringStation SelectedStation
         {
-            get => _selectedStation;
-            set => SetProperty(ref _selectedStation, value);
-        }
-
-        public AirQualityReading SelectedReading
-        {
-            get => _selectedReading;
-            set => SetProperty(ref _selectedReading, value);
-        }
-
-        public string NewStationName
-        {
-            get => _newStationName;
-            set => SetProperty(ref _newStationName, value);
-        }
-
-        public string NewStationCity
-        {
-            get => _newStationCity;
-            set => SetProperty(ref _newStationCity, value);
-        }
-
-        public string NewStationDistrict
-        {
-            get => _newStationDistrict;
-            set => SetProperty(ref _newStationDistrict, value);
-        }
-
-        public string NewStationLatitude
-        {
-            get => _newStationLatitude;
-            set => SetProperty(ref _newStationLatitude, value);
-        }
-
-        public string NewStationLongitude
-        {
-            get => _newStationLongitude;
-            set => SetProperty(ref _newStationLongitude, value);
-        }
-
-        public string NewReadingStationId
-        {
-            get => _newReadingStationId;
-            set => SetProperty(ref _newReadingStationId, value);
-        }
-
-        public DateTime NewReadingTime
-        {
-            get => _newReadingTime;
-            set => SetProperty(ref _newReadingTime, value);
-        }
-
-        public string NewReadingPM25
-        {
-            get => _newReadingPM25;
-            set => SetProperty(ref _newReadingPM25, value);
-        }
-
-        public string NewReadingNO2
-        {
-            get => _newReadingNO2;
-            set => SetProperty(ref _newReadingNO2, value);
-        }
-
-        public string NewReadingOzone
-        {
-            get => _newReadingOzone;
-            set => SetProperty(ref _newReadingOzone, value);
-        }
-
-        public string StationSearchText
-        {
-            get => _stationSearchText;
+            get => selectedStation;
             set
             {
-                SetProperty(ref _stationSearchText, value);
+                selectedStation = value;
+                OnPropertyChanged();
+                DeleteStationCommand.RaiseCanExecuteChanged();
+                UpdateStationCommand.RaiseCanExecuteChanged();
+
+                if (value != null)
+                {
+                    NewStationName = value.Name;
+                    NewStationCity = value.City;
+                    NewStationDistrict = value.District;
+                    NewStationLatitude = value.Latitude.ToString();
+                    NewStationLongitude = value.Longitude.ToString();
+                }
+            }
+        }
+
+        private AirQualityReading selectedReading;
+        public AirQualityReading SelectedReading
+        {
+            get => selectedReading;
+            set
+            {
+                selectedReading = value;
+                OnPropertyChanged();
+                DeleteReadingCommand.RaiseCanExecuteChanged();
+                UpdateReadingCommand.RaiseCanExecuteChanged();
+
+                if (value != null)
+                {
+                    NewReadingStationId = value.StationId.ToString();
+                    NewReadingTime = value.ReadingTime;
+                    NewReadingPM25 = value.PM25.ToString();
+                    NewReadingNO2 = value.NO2Level.ToString();
+                    NewReadingOzone = value.OzoneLevel.ToString();
+                }
+            }
+        }
+
+        #endregion
+
+        #region Search Properties
+
+        private string stationSearchText;
+        public string StationSearchText
+        {
+            get => stationSearchText;
+            set
+            {
+                stationSearchText = value;
+                OnPropertyChanged();
                 FilterStations();
             }
         }
 
+        private string readingSearchText;
         public string ReadingSearchText
         {
-            get => _readingSearchText;
+            get => readingSearchText;
             set
             {
-                SetProperty(ref _readingSearchText, value);
+                readingSearchText = value;
+                OnPropertyChanged();
                 FilterReadings();
             }
         }
 
-        public ObservableCollection<ISeries> StateSeries
+        #endregion
+
+        #region New Station Properties
+
+        private string newStationName;
+        public string NewStationName
         {
-            get => _stateSeries;
-            set => SetProperty(ref _stateSeries, value);
+            get => newStationName;
+            set { newStationName = value; OnPropertyChanged(); }
+        }
+
+        private string newStationCity;
+        public string NewStationCity
+        {
+            get => newStationCity;
+            set { newStationCity = value; OnPropertyChanged(); }
+        }
+
+        private string newStationDistrict;
+        public string NewStationDistrict
+        {
+            get => newStationDistrict;
+            set { newStationDistrict = value; OnPropertyChanged(); }
+        }
+
+        private string newStationLatitude;
+        public string NewStationLatitude
+        {
+            get => newStationLatitude;
+            set { newStationLatitude = value; OnPropertyChanged(); }
+        }
+
+        private string newStationLongitude;
+        public string NewStationLongitude
+        {
+            get => newStationLongitude;
+            set { newStationLongitude = value; OnPropertyChanged(); }
         }
 
         #endregion
 
-        #region Initialization
+        #region New Reading Properties
 
-        private void InitializeCommands()
+        private string newReadingStationId;
+        public string NewReadingStationId
         {
-            AddStationCommand = new RelayCommand(ExecuteAddStation, CanExecuteAddStation);
-            UpdateStationCommand = new RelayCommand(ExecuteUpdateStation, CanExecuteUpdateStation);
-            DeleteStationCommand = new RelayCommand(ExecuteDeleteStation, CanExecuteDeleteStation);
-            AddReadingCommand = new RelayCommand(ExecuteAddReading, CanExecuteAddReading);
-            UpdateReadingCommand = new RelayCommand(ExecuteUpdateReading, CanExecuteUpdateReading);
-            DeleteReadingCommand = new RelayCommand(ExecuteDeleteReading, CanExecuteDeleteReading);
-            UndoCommand = new RelayCommand(ExecuteUndo, CanExecuteUndo);
-            RedoCommand = new RelayCommand(ExecuteRedo, CanExecuteRedo);
-            SaveDataCommand = new RelayCommand(ExecuteSaveData);
-            LoadDataCommand = new RelayCommand(ExecuteLoadData);
-            SearchStationsCommand = new RelayCommand(_ => FilterStations());
-            SearchReadingsCommand = new RelayCommand(_ => FilterReadings());
+            get => newReadingStationId;
+            set { newReadingStationId = value; OnPropertyChanged(); }
         }
 
-        private void LoadInitialData()
+        private DateTime newReadingTime = DateTime.Now;
+        public DateTime NewReadingTime
+        {
+            get => newReadingTime;
+            set { newReadingTime = value; OnPropertyChanged(); }
+        }
+
+        private string newReadingPM25;
+        public string NewReadingPM25
+        {
+            get => newReadingPM25;
+            set { newReadingPM25 = value; OnPropertyChanged(); }
+        }
+
+        private string newReadingNO2;
+        public string NewReadingNO2
+        {
+            get => newReadingNO2;
+            set { newReadingNO2 = value; OnPropertyChanged(); }
+        }
+
+        private string newReadingOzone;
+        public string NewReadingOzone
+        {
+            get => newReadingOzone;
+            set { newReadingOzone = value; OnPropertyChanged(); }
+        }
+
+        #endregion
+
+        #region Chart
+
+        private ISeries[] stateSeries;
+        public ISeries[] StateSeries
+        {
+            get => stateSeries;
+            set { stateSeries = value; OnPropertyChanged(); }
+        }
+
+        #endregion
+
+        #region Commands
+
+        public RelayCommand AddStationCommand { get; }
+        public RelayCommand UpdateStationCommand { get; }
+        public RelayCommand DeleteStationCommand { get; }
+
+        public RelayCommand AddReadingCommand { get; }
+        public RelayCommand UpdateReadingCommand { get; }
+        public RelayCommand DeleteReadingCommand { get; }
+
+        public RelayCommand UndoCommand { get; }
+        public RelayCommand RedoCommand { get; }
+
+        public RelayCommand SaveDataCommand { get; }
+        public RelayCommand LoadDataCommand { get; }
+
+        #endregion
+
+        public MainViewModel()
+        {
+            stationRepo = new MonitoringStationRepository();
+            readingRepo = new AirQualityRepository();
+            commandManager = new CommandManager();
+            persistenceContext = new PersistenceContext();
+            logger = new LoggerService();
+            simulationService = new StateSimulationService();
+
+            persistenceContext.SetStrategy(new JsonPersistenceStrategy());
+
+            Stations = new ObservableCollection<MonitoringStation>();
+            Readings = new ObservableCollection<AirQualityReading>();
+            FilteredStations = new ObservableCollection<MonitoringStation>();
+            FilteredReadings = new ObservableCollection<AirQualityReading>();
+
+            // Commands
+            AddStationCommand = new RelayCommand(AddStation);
+            UpdateStationCommand = new RelayCommand(UpdateStation, () => SelectedStation != null);
+            DeleteStationCommand = new RelayCommand(DeleteStation, () => SelectedStation != null);
+
+            AddReadingCommand = new RelayCommand(AddReading);
+            UpdateReadingCommand = new RelayCommand(UpdateReading, () => SelectedReading != null);
+            DeleteReadingCommand = new RelayCommand(DeleteReading, () => SelectedReading != null);
+
+            UndoCommand = new RelayCommand(Undo);
+            RedoCommand = new RelayCommand(Redo);
+
+            SaveDataCommand = new RelayCommand(SaveData);
+            LoadDataCommand = new RelayCommand(LoadData);
+
+            // Chart update timer
+            chartUpdateTimer = new DispatcherTimer
+            {
+                Interval = TimeSpan.FromSeconds(5)
+            };
+            chartUpdateTimer.Tick += (s, e) => UpdateChart();
+            chartUpdateTimer.Start();
+
+            // Simulation
+            simulationService.OnStateChanged += OnReadingStateChanged;
+            simulationService.Start();
+
+            InitializeData();
+
+            System.Diagnostics.Debug.WriteLine($"MainViewModel loaded. Readings count: {Readings.Count}");
+
+            UpdateChart();
+
+            logger.Log("Application started");
+        }
+
+        private void InitializeData()
+        {
+            var loadedData = persistenceContext.Load();
+
+            if (loadedData != null && loadedData.Stations.Count > 0)
+            {
+                stationRepo.LoadAll(loadedData.Stations);
+                readingRepo.LoadAll(loadedData.Readings);
+            }
+            else
+            {
+                var defaultStations = DataSeeder.GetDefaultStations();
+                var defaultReadings = DataSeeder.GetDefaultReadings(defaultStations);
+
+                stationRepo.LoadAll(defaultStations);
+                readingRepo.LoadAll(defaultReadings);
+
+                foreach (var reading in defaultReadings)
+                {
+                    reading.EvaluateState();
+                }
+            }
+
+            RefreshCollections();
+        }
+
+        private void RefreshCollections()
+        {
+            Stations.Clear();
+            foreach (var station in stationRepo.GetAll())
+                Stations.Add(station);
+
+            Readings.Clear();
+            foreach (var reading in readingRepo.GetAll())
+                Readings.Add(reading);
+
+            FilterStations();
+            FilterReadings();
+        }
+
+        #region Station Methods
+
+        private void AddStation()
         {
             try
             {
-                var (stations, readings) = _persistenceService.LoadData();
-
-                if (stations.Count == 0)
+                if (!ValidateStationInput(out var errorMessage))
                 {
-                    stations = GetDefaultStations();
-                    readings = GetDefaultReadings(stations);
+                    MessageBox.Show(errorMessage, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
 
-                _dataService.SetData(stations, readings);
-
-                foreach (var station in stations)
+                var station = new MonitoringStation
                 {
-                    _stations.Add(station);
-                    _filteredStations.Add(station);
-                }
+                    Name = NewStationName,
+                    City = NewStationCity,
+                    District = NewStationDistrict,
+                    Latitude = double.Parse(NewStationLatitude),
+                    Longitude = double.Parse(NewStationLongitude)
+                };
 
-                foreach (var reading in readings)
-                {
-                    _readings.Add(reading);
-                    _filteredReadings.Add(reading);
-                    StartStateSimulation(reading);
-                }
+                var command = new AddStationCommand(stationRepo, station);
+                commandManager.ExecuteCommand(command);
 
-                _loggingService.LogActivity("Application started and data loaded successfully");
+                Stations.Add(station);
+                FilterStations();
                 UpdateChart();
+
+                ClearStationInputs();
+
+                logger.Log($"Station added: {station.Name}");
+                MessageBox.Show("Station added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
             catch (Exception ex)
             {
-                MessageBox.Show($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                _loggingService.LogActivity($"Error loading data: {ex.Message}");
+                MessageBox.Show($"Error adding station: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.Log($"Error adding station: {ex.Message}");
             }
         }
 
-        private List<MonitoringStation> GetDefaultStations()
+        private void UpdateStation()
         {
-            return new List<MonitoringStation>
+            try
             {
-                new MonitoringStation
+                if (SelectedStation == null) return;
+
+                if (!ValidateStationInput(out var errorMessage))
                 {
-                    Id = Guid.NewGuid(),
-                    Name = "Central Station",
-                    City = "Belgrade",
-                    District = "Stari Grad",
-                    Latitude = 44.8176,
-                    Longitude = 20.4569
-                },
-                new MonitoringStation
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "North Station",
-                    City = "Novi Sad",
-                    District = "Center",
-                    Latitude = 45.2671,
-                    Longitude = 19.8335
-                },
-                new MonitoringStation
-                {
-                    Id = Guid.NewGuid(),
-                    Name = "South Station",
-                    City = "Niš",
-                    District = "Medijana",
-                    Latitude = 43.3209,
-                    Longitude = 21.8958
+                    MessageBox.Show(errorMessage, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
-            };
-        }
 
-        private List<AirQualityReading> GetDefaultReadings(List<MonitoringStation> stations)
-        {
-            var readings = new List<AirQualityReading>();
-            var random = new Random();
-
-            foreach (var station in stations)
-            {
-                for (int i = 0; i < 3; i++)
+                var oldStation = new MonitoringStation
                 {
-                    readings.Add(new AirQualityReading
-                    {
-                        Id = Guid.NewGuid(),
-                        StationId = station.Id,
-                        ReadingTime = DateTime.Now.AddHours(-i * 2),
-                        PM25 = random.Next(10, 100),
-                        NO2Level = random.Next(20, 90),
-                        OzoneLevel = random.Next(30, 120),
-                        State = (AirQualityState)random.Next(0, 4)
-                    });
-                }
+                    Id = SelectedStation.Id,
+                    Name = SelectedStation.Name,
+                    City = SelectedStation.City,
+                    District = SelectedStation.District,
+                    Latitude = SelectedStation.Latitude,
+                    Longitude = SelectedStation.Longitude
+                };
+
+                var updatedStation = new MonitoringStation
+                {
+                    Id = SelectedStation.Id,
+                    Name = NewStationName,
+                    City = NewStationCity,
+                    District = NewStationDistrict,
+                    Latitude = double.Parse(NewStationLatitude),
+                    Longitude = double.Parse(NewStationLongitude)
+                };
+
+                var command = new UpdateStationCommand(stationRepo, oldStation, updatedStation);
+                commandManager.ExecuteCommand(command);
+
+                RefreshCollections();
+                UpdateChart();
+
+                logger.Log($"Station updated: {updatedStation.Name}");
+                MessageBox.Show("Station updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-
-            return readings;
-        }
-
-        private void InitializeChart()
-        {
-            StateSeries = new ObservableCollection<ISeries>();
-            UpdateChart();
-        }
-
-        #endregion
-
-        #region Station Commands
-
-        private bool CanExecuteAddStation(object parameter)
-        {
-            return !string.IsNullOrWhiteSpace(NewStationName) &&
-                   !string.IsNullOrWhiteSpace(NewStationCity) &&
-                   !string.IsNullOrWhiteSpace(NewStationDistrict) &&
-                   double.TryParse(NewStationLatitude, out _) &&
-                   double.TryParse(NewStationLongitude, out _);
-        }
-
-        private void ExecuteAddStation(object parameter)
-        {
-            if (!double.TryParse(NewStationLatitude, out double latitude) ||
-                !double.TryParse(NewStationLongitude, out double longitude))
+            catch (Exception ex)
             {
-                MessageBox.Show("Invalid latitude or longitude values", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (latitude < -90 || latitude > 90)
-            {
-                MessageBox.Show("Latitude must be between -90 and 90", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (longitude < -180 || longitude > 180)
-            {
-                MessageBox.Show("Longitude must be between -180 and 180", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var station = new MonitoringStation
-            {
-                Id = Guid.NewGuid(),
-                Name = NewStationName,
-                City = NewStationCity,
-                District = NewStationDistrict,
-                Latitude = latitude,
-                Longitude = longitude
-            };
-
-            var action = new AddAction<MonitoringStation>(_stations, station);
-            _undoRedoManager.ExecuteAction(action);
-            _dataService.AddStation(station);
-            FilteredStations.Add(station);
-
-            _loggingService.LogActivity($"Added new station: {station.Name} in {station.City}");
-
-            ClearStationForm();
-        }
-
-        private bool CanExecuteUpdateStation(object parameter)
-        {
-            return SelectedStation != null;
-        }
-
-        private void ExecuteUpdateStation(object parameter)
-        {
-            if (SelectedStation == null) return;
-
-            var oldStation = new MonitoringStation
-            {
-                Id = SelectedStation.Id,
-                Name = SelectedStation.Name,
-                City = SelectedStation.City,
-                District = SelectedStation.District,
-                Latitude = SelectedStation.Latitude,
-                Longitude = SelectedStation.Longitude
-            };
-
-            _dataService.UpdateStation(SelectedStation);
-            _loggingService.LogActivity($"Updated station: {SelectedStation.Name}");
-
-            UpdateChart();
-        }
-
-        private bool CanExecuteDeleteStation(object parameter)
-        {
-            return SelectedStation != null;
-        }
-
-        private void ExecuteDeleteStation(object parameter)
-        {
-            if (SelectedStation == null) return;
-
-            var stationToDelete = SelectedStation;
-            var stationName = stationToDelete.Name;
-
-            var result = MessageBox.Show($"Are you sure you want to delete station '{SelectedStation.Name}'?",
-                                       "Confirm Delete",
-                                       MessageBoxButton.YesNo,
-                                       MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                var action = new RemoveAction<MonitoringStation>(_stations, stationToDelete);
-                _undoRedoManager.ExecuteAction(action);
-                _dataService.RemoveStation(stationToDelete);
-                FilteredStations.Remove(stationToDelete);
-
-                _loggingService.LogActivity($"Deleted station: {stationName}");
-                SelectedStation = null;
+                MessageBox.Show($"Error updating station: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.Log($"Error updating station: {ex.Message}");
             }
         }
 
-        private void ClearStationForm()
+        private void DeleteStation()
+        {
+            try
+            {
+                if (SelectedStation == null) return;
+
+                var stationToDelete = SelectedStation;
+                var stationName = stationToDelete.Name;
+
+                var result = MessageBox.Show(
+                    $"Are you sure you want to delete station '{stationName}'?",
+                    "Confirm Delete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                var command = new RemoveStationCommand(stationRepo, stationToDelete);
+                commandManager.ExecuteCommand(command);
+
+                Stations.Remove(stationToDelete);
+                FilterStations();
+                UpdateChart();
+
+                ClearStationInputs();
+
+                logger.Log($"Station deleted: {stationName}");
+                MessageBox.Show("Station deleted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting station: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.Log($"Error deleting station: {ex.Message}");
+            }
+        }
+
+        private bool ValidateStationInput(out string errorMessage)
+        {
+            if (string.IsNullOrWhiteSpace(NewStationName))
+            {
+                errorMessage = "Station name is required.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(NewStationCity))
+            {
+                errorMessage = "City is required.";
+                return false;
+            }
+
+            if (string.IsNullOrWhiteSpace(NewStationDistrict))
+            {
+                errorMessage = "District is required.";
+                return false;
+            }
+
+            if (!double.TryParse(NewStationLatitude, out var lat) || lat < -90 || lat > 90)
+            {
+                errorMessage = "Latitude must be a number between -90 and 90.";
+                return false;
+            }
+
+            if (!double.TryParse(NewStationLongitude, out var lon) || lon < -180 || lon > 180)
+            {
+                errorMessage = "Longitude must be a number between -180 and 180.";
+                return false;
+            }
+
+            errorMessage = null;
+            return true;
+        }
+
+        private void ClearStationInputs()
         {
             NewStationName = string.Empty;
             NewStationCity = string.Empty;
@@ -450,119 +495,166 @@ namespace AirQualityInformationSystem.ViewModels
 
         #endregion
 
-        #region Reading Commands
+        #region Reading Methods
 
-        private bool CanExecuteAddReading(object parameter)
+        private void AddReading()
         {
-            return Guid.TryParse(NewReadingStationId, out _) &&
-                   double.TryParse(NewReadingPM25, out _) &&
-                   double.TryParse(NewReadingNO2, out _) &&
-                   double.TryParse(NewReadingOzone, out _);
-        }
-
-        private void ExecuteAddReading(object parameter)
-        {
-            if (!Guid.TryParse(NewReadingStationId, out Guid stationId) ||
-                !double.TryParse(NewReadingPM25, out double pm25) ||
-                !double.TryParse(NewReadingNO2, out double no2) ||
-                !double.TryParse(NewReadingOzone, out double ozone))
+            try
             {
-                MessageBox.Show("Invalid input values", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (pm25 < 0 || no2 < 0 || ozone < 0)
-            {
-                MessageBox.Show("Concentration values must be positive", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            if (!_stations.Any(s => s.Id == stationId))
-            {
-                MessageBox.Show("Station with given ID does not exist", "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return;
-            }
-
-            var reading = new AirQualityReading
-            {
-                Id = Guid.NewGuid(),
-                StationId = stationId,
-                ReadingTime = NewReadingTime,
-                PM25 = pm25,
-                NO2Level = no2,
-                OzoneLevel = ozone,
-                State = AirQualityState.Good
-            };
-
-            var action = new AddAction<AirQualityReading>(_readings, reading);
-            _undoRedoManager.ExecuteAction(action);
-            _dataService.AddReading(reading);
-            FilteredReadings.Add(reading);
-
-            StartStateSimulation(reading);
-
-            _loggingService.LogActivity($"Added new reading for station {stationId} at {reading.ReadingTime}");
-
-            ClearReadingForm();
-            UpdateChart();
-        }
-
-        private bool CanExecuteUpdateReading(object parameter)
-        {
-            return SelectedReading != null;
-        }
-
-        private void ExecuteUpdateReading(object parameter)
-        {
-            if (SelectedReading == null) return;
-
-            _dataService.UpdateReading(SelectedReading);
-            _loggingService.LogActivity($"Updated reading with ID: {SelectedReading.Id}");
-
-            UpdateChart();
-        }
-
-        private bool CanExecuteDeleteReading(object parameter)
-        {
-            return SelectedReading != null;
-        }
-
-        private void ExecuteDeleteReading(object parameter)
-        {
-            if (SelectedReading == null) return;
-
-            var readingToDelete = SelectedReading;
-            var readingId = readingToDelete.Id;
-
-            var result = MessageBox.Show($"Are you sure you want to delete this reading?",
-                                       "Confirm Delete",
-                                       MessageBoxButton.YesNo,
-                                       MessageBoxImage.Question);
-
-            if (result == MessageBoxResult.Yes)
-            {
-                if (result == MessageBoxResult.Yes)
+                if (!ValidateReadingInput(out var errorMessage))
                 {
-                    if (_simulationTokens.ContainsKey(readingId))
-                    {
-                        _simulationTokens[readingId].Cancel();
-                        _simulationTokens.Remove(readingId);
-                    }
-
-                    var action = new RemoveAction<AirQualityReading>(_readings, readingToDelete);
-                    _undoRedoManager.ExecuteAction(action);
-                    _dataService.RemoveReading(readingToDelete);
-                    FilteredReadings.Remove(readingToDelete);
-
-                    _loggingService.LogActivity($"Deleted reading with ID: {readingId}");
-                    SelectedReading = null;
-
-                    UpdateChart();
+                    MessageBox.Show(errorMessage, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
                 }
+
+                var reading = new AirQualityReading
+                {
+                    StationId = Guid.Parse(NewReadingStationId),
+                    ReadingTime = NewReadingTime,
+                    PM25 = double.Parse(NewReadingPM25),
+                    NO2Level = double.Parse(NewReadingNO2),
+                    OzoneLevel = double.Parse(NewReadingOzone)
+                };
+
+                reading.EvaluateState();
+
+                var command = new AddReadingCommand(readingRepo, reading);
+                commandManager.ExecuteCommand(command);
+
+                Readings.Add(reading);
+                FilterReadings();
+                UpdateChart();
+
+                ClearReadingInputs();
+
+                logger.Log($"Reading added for StationId: {reading.StationId}");
+                MessageBox.Show("Reading added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error adding reading: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.Log($"Error adding reading: {ex.Message}");
             }
         }
 
-        private void ClearReadingForm()
+        private void UpdateReading()
+        {
+            try
+            {
+                if (SelectedReading == null) return;
+
+                if (!ValidateReadingInput(out var errorMessage))
+                {
+                    MessageBox.Show(errorMessage, "Validation Error", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
+                var oldReading = new AirQualityReading
+                {
+                    Id = SelectedReading.Id,
+                    StationId = SelectedReading.StationId,
+                    ReadingTime = SelectedReading.ReadingTime,
+                    PM25 = SelectedReading.PM25,
+                    NO2Level = SelectedReading.NO2Level,
+                    OzoneLevel = SelectedReading.OzoneLevel,
+                    State = SelectedReading.State
+                };
+
+                var updatedReading = new AirQualityReading
+                {
+                    Id = SelectedReading.Id,
+                    StationId = Guid.Parse(NewReadingStationId),
+                    ReadingTime = NewReadingTime,
+                    PM25 = double.Parse(NewReadingPM25),
+                    NO2Level = double.Parse(NewReadingNO2),
+                    OzoneLevel = double.Parse(NewReadingOzone)
+                };
+
+                updatedReading.EvaluateState();
+
+                var command = new UpdateReadingCommand(readingRepo, oldReading, updatedReading);
+                commandManager.ExecuteCommand(command);
+
+                RefreshCollections();
+                UpdateChart();
+
+                logger.Log($"Reading updated for StationId: {updatedReading.StationId}");
+                MessageBox.Show("Reading updated successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error updating reading: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.Log($"Error updating reading: {ex.Message}");
+            }
+        }
+
+        private void DeleteReading()
+        {
+            try
+            {
+                if (SelectedReading == null) return;
+
+                var readingToDelete = SelectedReading;
+                var stationId = readingToDelete.StationId;
+
+                var result = MessageBox.Show(
+                    "Are you sure you want to delete this reading?",
+                    "Confirm Delete",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (result != MessageBoxResult.Yes) return;
+
+                var command = new RemoveReadingCommand(readingRepo, readingToDelete);
+                commandManager.ExecuteCommand(command);
+
+                Readings.Remove(readingToDelete);
+                FilterReadings();
+                UpdateChart();
+
+                ClearReadingInputs();
+
+                logger.Log($"Reading deleted for StationId: {stationId}");
+                MessageBox.Show("Reading deleted successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error deleting reading: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.Log($"Error deleting reading: {ex.Message}");
+            }
+        }
+
+        private bool ValidateReadingInput(out string errorMessage)
+        {
+            if (!Guid.TryParse(NewReadingStationId, out _))
+            {
+                errorMessage = "Invalid Station ID. Must be a valid GUID.";
+                return false;
+            }
+
+            if (!double.TryParse(NewReadingPM25, out var pm25) || pm25 < 0)
+            {
+                errorMessage = "PM2.5 must be a non-negative number.";
+                return false;
+            }
+
+            if (!double.TryParse(NewReadingNO2, out var no2) || no2 < 0)
+            {
+                errorMessage = "NO2 Level must be a non-negative number.";
+                return false;
+            }
+
+            if (!double.TryParse(NewReadingOzone, out var ozone) || ozone < 0)
+            {
+                errorMessage = "Ozone Level must be a non-negative number.";
+                return false;
+            }
+
+            errorMessage = null;
+            return true;
+        }
+
+        private void ClearReadingInputs()
         {
             NewReadingStationId = string.Empty;
             NewReadingTime = DateTime.Now;
@@ -573,186 +665,122 @@ namespace AirQualityInformationSystem.ViewModels
 
         #endregion
 
-        #region Undo/Redo Commands
-
-        private bool CanExecuteUndo(object parameter)
-        {
-            return _undoRedoManager.CanUndo;
-        }
-
-        private void ExecuteUndo(object parameter)
-        {
-            _undoRedoManager.Undo();
-            _loggingService.LogActivity("Undo action executed");
-            FilterStations();
-            FilterReadings();
-            UpdateChart();
-        }
-
-        private bool CanExecuteRedo(object parameter)
-        {
-            return _undoRedoManager.CanRedo;
-        }
-
-        private void ExecuteRedo(object parameter)
-        {
-            _undoRedoManager.Redo();
-            _loggingService.LogActivity("Redo action executed");
-            FilterStations();
-            FilterReadings();
-            UpdateChart();
-        }
-
-        #endregion
-
-        #region Persistence Commands
-
-        private void ExecuteSaveData(object parameter)
-        {
-            try
-            {
-                _persistenceService.SaveData(_stations.ToList(), _readings.ToList());
-                _loggingService.LogActivity("Data saved successfully");
-                MessageBox.Show("Data saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error saving data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                _loggingService.LogActivity($"Error saving data: {ex.Message}");
-            }
-        }
-
-        private void ExecuteLoadData(object parameter)
-        {
-            try
-            {
-                var (stations, readings) = _persistenceService.LoadData();
-
-                // Cancel all simulations
-                foreach (var token in _simulationTokens.Values)
-                {
-                    token.Cancel();
-                }
-                _simulationTokens.Clear();
-
-                _stations.Clear();
-                _readings.Clear();
-                _filteredStations.Clear();
-                _filteredReadings.Clear();
-
-                _dataService.SetData(stations, readings);
-
-                foreach (var station in stations)
-                {
-                    _stations.Add(station);
-                    _filteredStations.Add(station);
-                }
-
-                foreach (var reading in readings)
-                {
-                    _readings.Add(reading);
-                    _filteredReadings.Add(reading);
-                    StartStateSimulation(reading);
-                }
-
-                _loggingService.LogActivity("Data loaded successfully");
-                UpdateChart();
-                MessageBox.Show("Data loaded successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                _loggingService.LogActivity($"Error loading data: {ex.Message}");
-            }
-        }
-
-        #endregion
-
-        #region Search/Filter
+        #region Filter Methods
 
         private void FilterStations()
         {
             FilteredStations.Clear();
 
-            if (string.IsNullOrWhiteSpace(StationSearchText))
+            var filtered = Stations.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(StationSearchText))
             {
-                foreach (var station in _stations)
-                {
-                    FilteredStations.Add(station);
-                }
+                var search = StationSearchText.ToLower();
+                filtered = filtered.Where(s =>
+                    s.Name.ToLower().Contains(search) ||
+                    s.City.ToLower().Contains(search) ||
+                    s.District.ToLower().Contains(search) ||
+                    s.Latitude.ToString().Contains(search) ||
+                    s.Longitude.ToString().Contains(search));
             }
-            else
-            {
-                var searchLower = StationSearchText.ToLower();
-                foreach (var station in _stations)
-                {
-                    if (station.Name.ToLower().Contains(searchLower) ||
-                        station.City.ToLower().Contains(searchLower) ||
-                        station.District.ToLower().Contains(searchLower) ||
-                        station.Latitude.ToString().Contains(searchLower) ||
-                        station.Longitude.ToString().Contains(searchLower))
-                    {
-                        FilteredStations.Add(station);
-                    }
-                }
-            }
+
+            foreach (var station in filtered)
+                FilteredStations.Add(station);
         }
 
         private void FilterReadings()
         {
             FilteredReadings.Clear();
 
-            if (string.IsNullOrWhiteSpace(ReadingSearchText))
+            var filtered = Readings.AsEnumerable();
+
+            if (!string.IsNullOrWhiteSpace(ReadingSearchText))
             {
-                foreach (var reading in _readings)
-                {
-                    FilteredReadings.Add(reading);
-                }
+                var search = ReadingSearchText.ToLower();
+                filtered = filtered.Where(r =>
+                    r.StationId.ToString().ToLower().Contains(search) ||
+                    r.ReadingTime.ToString().ToLower().Contains(search) ||
+                    r.PM25.ToString().Contains(search) ||
+                    r.NO2Level.ToString().Contains(search) ||
+                    r.OzoneLevel.ToString().Contains(search) ||
+                    r.State.ToString().ToLower().Contains(search));
             }
-            else
-            {
-                var searchLower = ReadingSearchText.ToLower();
-                foreach (var reading in _readings)
-                {
-                    if (reading.StationId.ToString().ToLower().Contains(searchLower) ||
-                        reading.ReadingTime.ToString().ToLower().Contains(searchLower) ||
-                        reading.PM25.ToString().Contains(searchLower) ||
-                        reading.NO2Level.ToString().Contains(searchLower) ||
-                        reading.OzoneLevel.ToString().Contains(searchLower) ||
-                        reading.State.ToString().ToLower().Contains(searchLower))
-                    {
-                        FilteredReadings.Add(reading);
-                    }
-                }
-            }
+
+            foreach (var reading in filtered)
+                FilteredReadings.Add(reading);
         }
 
         #endregion
 
-        #region State Simulation
+        #region Undo/Redo
 
-        private async void StartStateSimulation(AirQualityReading reading)
+        private void Undo()
         {
-            var cts = new CancellationTokenSource();
-            _simulationTokens[reading.Id] = cts;
+            commandManager.Undo();
+            RefreshCollections();
+            UpdateChart();
+            logger.Log("Undo executed");
+        }
 
+        private void Redo()
+        {
+            commandManager.Redo();
+            RefreshCollections();
+            UpdateChart();
+            logger.Log("Redo executed");
+        }
+
+        #endregion
+
+        #region Save/Load
+
+        private void SaveData()
+        {
             try
             {
-                await _stateSimulationService.SimulateStateChanges(
-                    reading,
-                    state =>
-                    {
-                        Application.Current.Dispatcher.Invoke(() =>
-                        {
-                            UpdateChart();
-                            _loggingService.LogActivity($"Reading {reading.Id} state changed to {state}");
-                        });
-                    },
-                    cts.Token);
+                var data = new PersistenceData
+                {
+                    Stations = stationRepo.GetAll().ToList(),
+                    Readings = readingRepo.GetAll().ToList()
+                };
+
+                persistenceContext.Save(data);
+
+                logger.Log("Data saved to file");
+                MessageBox.Show("Data saved successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
             }
-            catch (OperationCanceledException)
+            catch (Exception ex)
             {
-                // Simulation was cancelled
+                MessageBox.Show($"Error saving data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.Log($"Error saving data: {ex.Message}");
+            }
+        }
+
+        private void LoadData()
+        {
+            try
+            {
+                var data = persistenceContext.Load();
+
+                if (data == null || data.Stations.Count == 0)
+                {
+                    MessageBox.Show("No data found to load.", "Info", MessageBoxButton.OK, MessageBoxImage.Information);
+                    return;
+                }
+
+                stationRepo.LoadAll(data.Stations);
+                readingRepo.LoadAll(data.Readings);
+
+                RefreshCollections();
+                UpdateChart();
+
+                logger.Log("Data loaded from file");
+                MessageBox.Show("Data loaded successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error loading data: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                logger.Log($"Error loading data: {ex.Message}");
             }
         }
 
@@ -762,38 +790,79 @@ namespace AirQualityInformationSystem.ViewModels
 
         private void UpdateChart()
         {
-            var goodCount = _readings.Count(r => r.State == AirQualityState.Good);
-            var moderateCount = _readings.Count(r => r.State == AirQualityState.Moderate);
-            var unhealthyCount = _readings.Count(r => r.State == AirQualityState.Unhealthy);
-            var hazardousCount = _readings.Count(r => r.State == AirQualityState.Hazardous);
+            var goodCount = Readings.Count(r => r.State == AirQualityState.Good);
+            var moderateCount = Readings.Count(r => r.State == AirQualityState.Moderate);
+            var unhealthyCount = Readings.Count(r => r.State == AirQualityState.Unhealthy);
+            var hazardousCount = Readings.Count(r => r.State == AirQualityState.Hazardous);
 
-            StateSeries = new ObservableCollection<ISeries>
+            System.Diagnostics.Debug.WriteLine($"Chart Update: Good={goodCount}, Moderate={moderateCount}, Unhealthy={unhealthyCount}, Hazardous={hazardousCount}");
+
+            var seriesList = new List<ISeries>();
+
+            if (goodCount > 0)
             {
-                new PieSeries<int>
+                seriesList.Add(new PieSeries<int>
                 {
                     Values = new[] { goodCount },
-                    Name = "Good",
-                    Fill = new SolidColorPaint(SKColors.Green)
-                },
-                new PieSeries<int>
+                    Name = $"Good ({goodCount})"
+                });
+            }
+
+            if (moderateCount > 0)
+            {
+                seriesList.Add(new PieSeries<int>
                 {
                     Values = new[] { moderateCount },
-                    Name = "Moderate",
-                    Fill = new SolidColorPaint(SKColors.Yellow)
-                },
-                new PieSeries<int>
+                    Name = $"Moderate ({moderateCount})"
+                });
+            }
+
+            if (unhealthyCount > 0)
+            {
+                seriesList.Add(new PieSeries<int>
                 {
                     Values = new[] { unhealthyCount },
-                    Name = "Unhealthy",
-                    Fill = new SolidColorPaint(SKColors.Orange)
-                },
-                new PieSeries<int>
+                    Name = $"Unhealthy ({unhealthyCount})"
+                });
+            }
+
+            if (hazardousCount > 0)
+            {
+                seriesList.Add(new PieSeries<int>
                 {
                     Values = new[] { hazardousCount },
-                    Name = "Hazardous",
-                    Fill = new SolidColorPaint(SKColors.Red)
+                    Name = $"Hazardous ({hazardousCount})"
+                });
+            }
+
+            if (seriesList.Count == 0)
+            {
+                seriesList.Add(new PieSeries<int>
+                {
+                    Values = new[] { 1 },
+                    Name = "No Data"
+                });
+            }
+
+            StateSeries = seriesList.ToArray();
+            OnPropertyChanged(nameof(StateSeries));
+        }
+
+        #endregion
+
+        #region State Simulation
+
+        private void OnReadingStateChanged(AirQualityReading reading)
+        {
+            Application.Current.Dispatcher.Invoke(() =>
+            {
+                var existingReading = Readings.FirstOrDefault(r => r.Id == reading.Id);
+                if (existingReading != null)
+                {
+                    RefreshCollections();
+                    UpdateChart();
                 }
-            };
+            });
         }
 
         #endregion

@@ -43,14 +43,14 @@
     <Reference Include="HarfBuzzSharp, Version=1.0.0.0, Culture=neutral, PublicKeyToken=0738eb9f132ed756, processorArchitecture=MSIL">
       <HintPath>..\packages\HarfBuzzSharp.8.3.1.1\lib\net462\HarfBuzzSharp.dll</HintPath>
     </Reference>
-    <Reference Include="LiveChartsCore, Version=2.0.4.0, Culture=neutral, PublicKeyToken=cc92a3e13d40c573, processorArchitecture=MSIL">
-      <HintPath>..\packages\LiveChartsCore.2.0.4\lib\net462\LiveChartsCore.dll</HintPath>
+    <Reference Include="LiveChartsCore, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc92a3e13d40c573, processorArchitecture=MSIL">
+      <HintPath>..\packages\LiveChartsCore.2.0.0\lib\net462\LiveChartsCore.dll</HintPath>
     </Reference>
-    <Reference Include="LiveChartsCore.SkiaSharpView, Version=2.0.4.0, Culture=neutral, PublicKeyToken=cc92a3e13d40c573, processorArchitecture=MSIL">
-      <HintPath>..\packages\LiveChartsCore.SkiaSharpView.2.0.4\lib\net462\LiveChartsCore.SkiaSharpView.dll</HintPath>
+    <Reference Include="LiveChartsCore.SkiaSharpView, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc92a3e13d40c573, processorArchitecture=MSIL">
+      <HintPath>..\packages\LiveChartsCore.SkiaSharpView.2.0.0\lib\net462\LiveChartsCore.SkiaSharpView.dll</HintPath>
     </Reference>
-    <Reference Include="LiveChartsCore.SkiaSharpView.WPF, Version=2.0.4.0, Culture=neutral, PublicKeyToken=cc92a3e13d40c573, processorArchitecture=MSIL">
-      <HintPath>..\packages\LiveChartsCore.SkiaSharpView.WPF.2.0.4\lib\net462\LiveChartsCore.SkiaSharpView.WPF.dll</HintPath>
+    <Reference Include="LiveChartsCore.SkiaSharpView.WPF, Version=2.0.0.0, Culture=neutral, PublicKeyToken=cc92a3e13d40c573, processorArchitecture=MSIL">
+      <HintPath>..\packages\LiveChartsCore.SkiaSharpView.WPF.2.0.0\lib\net462\LiveChartsCore.SkiaSharpView.WPF.dll</HintPath>
     </Reference>
     <Reference Include="Microsoft.Bcl.AsyncInterfaces, Version=10.0.0.8, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\Microsoft.Bcl.AsyncInterfaces.10.0.8\lib\net462\Microsoft.Bcl.AsyncInterfaces.dll</HintPath>
@@ -82,6 +82,10 @@
       <HintPath>..\packages\System.Buffers.4.6.1\lib\net462\System.Buffers.dll</HintPath>
     </Reference>
     <Reference Include="System.Data" />
+    <Reference Include="System.Drawing" />
+    <Reference Include="System.Drawing.Common, Version=4.0.0.2, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
+      <HintPath>..\packages\System.Drawing.Common.4.7.3\lib\net461\System.Drawing.Common.dll</HintPath>
+    </Reference>
     <Reference Include="System.IO.Pipelines, Version=10.0.0.8, Culture=neutral, PublicKeyToken=cc7b13ffcd2ddd51, processorArchitecture=MSIL">
       <HintPath>..\packages\System.IO.Pipelines.10.0.8\lib\net462\System.IO.Pipelines.dll</HintPath>
     </Reference>
@@ -123,13 +127,35 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="Services\DataService.cs" />
-    <Compile Include="Services\IDataService.cs" />
-    <Compile Include="Services\ILoggingService.cs" />
-    <Compile Include="Services\IPersistenceService.cs" />
-    <Compile Include="Services\LoggingService.cs" />
-    <Compile Include="Services\PersistenceService.cs" />
+    <Compile Include="Commands\AddReadingCommand.cs" />
+    <Compile Include="Commands\AddStationCommand.cs" />
+    <Compile Include="Commands\CommandManager.cs" />
+    <Compile Include="Commands\RemoveReadingCommand.cs" />
+    <Compile Include="Commands\RemoveStationCommand.cs" />
+    <Compile Include="Commands\UpdateReadingCommand.cs" />
+    <Compile Include="Commands\UpdateStationCommand.cs" />
+    <Compile Include="Helpers\DataSeeder.cs" />
+    <Compile Include="Interfaces\IAirQualityState.cs" />
+    <Compile Include="Interfaces\ILoggerService.cs" />
+    <Compile Include="Interfaces\IObserver.cs" />
+    <Compile Include="Interfaces\IPersistenceStrategy.cs" />
+    <Compile Include="Interfaces\ISubject.cs" />
+    <Compile Include="Interfaces\IUndoableCommand.cs" />
+    <Compile Include="Repositories\AirQualityRepository.cs" />
+    <Compile Include="Repositories\MonitoringStationRepository.cs" />
+    <Compile Include="Services\Logging\LoggerService.cs" />
+    <Compile Include="Services\Operations\AbstractSaveOperation.cs" />
+    <Compile Include="Services\Operations\SaveReadingOperation.cs" />
+    <Compile Include="Services\Operations\SaveStationOperation.cs" />
+    <Compile Include="Services\Persistence\JsonPersistenceStrategy.cs" />
+    <Compile Include="Services\Persistence\PersistenceContext.cs" />
+    <Compile Include="Services\Persistence\PersistenceData.cs" />
     <Compile Include="Services\StateSimulationService.cs" />
+    <Compile Include="States\GoodState.cs" />
+    <Compile Include="States\HazardousState.cs" />
+    <Compile Include="States\ModerateState.cs" />
+    <Compile Include="States\UnhealthyState.cs" />
+    <Compile Include="ViewModels\AirQualityChartViewModel.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
     <Compile Include="Views\MainWindow.xaml.cs">
@@ -140,7 +166,6 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Helpers\RelayCommand.cs" />
-    <Compile Include="Helpers\UndoRedoManager.cs" />
     <Page Include="Views\MainWindow.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
@@ -177,6 +202,7 @@
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets" Condition="Exists('..\packages\System.ValueTuple.4.6.2\build\net471\System.ValueTuple.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">

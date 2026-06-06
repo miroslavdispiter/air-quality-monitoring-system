@@ -5,7 +5,6 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
         xmlns:vm="clr-namespace:AirQualityInformationSystem.ViewModels"
-        xmlns:local="clr-namespace:AirQualityInformationSystem.Views"
         mc:Ignorable="d"
         Title="Air Quality Information System" Height="900" Width="1400"
         WindowStartupLocation="CenterScreen">
@@ -55,14 +54,15 @@
                               SelectedItem="{Binding SelectedStation}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
-                              Margin="0,0,0,10">
+                              Margin="0,0,0,10"
+                              IsReadOnly="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="250" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="250"/>
                             <DataGridTextColumn Header="Name" Binding="{Binding Name}" Width="*"/>
                             <DataGridTextColumn Header="City" Binding="{Binding City}" Width="*"/>
                             <DataGridTextColumn Header="District" Binding="{Binding District}" Width="*"/>
-                            <DataGridTextColumn Header="Latitude" Binding="{Binding Latitude}" Width="100"/>
-                            <DataGridTextColumn Header="Longitude" Binding="{Binding Longitude}" Width="100"/>
+                            <DataGridTextColumn Header="Latitude" Binding="{Binding Latitude, StringFormat=F4}" Width="100"/>
+                            <DataGridTextColumn Header="Longitude" Binding="{Binding Longitude, StringFormat=F4}" Width="100"/>
                         </DataGrid.Columns>
                     </DataGrid>
 
@@ -141,14 +141,15 @@
                               SelectedItem="{Binding SelectedReading}"
                               AutoGenerateColumns="False"
                               CanUserAddRows="False"
-                              Margin="0,0,0,10">
+                              Margin="0,0,0,10"
+                              IsReadOnly="True">
                         <DataGrid.Columns>
-                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="200" IsReadOnly="True"/>
+                            <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="200"/>
                             <DataGridTextColumn Header="Station ID" Binding="{Binding StationId}" Width="200"/>
                             <DataGridTextColumn Header="Reading Time" Binding="{Binding ReadingTime, StringFormat='yyyy-MM-dd HH:mm:ss'}" Width="150"/>
-                            <DataGridTextColumn Header="PM2.5" Binding="{Binding PM25, StringFormat=F2}" Width="80"/>
-                            <DataGridTextColumn Header="NO2" Binding="{Binding NO2Level, StringFormat=F2}" Width="80"/>
-                            <DataGridTextColumn Header="Ozone" Binding="{Binding OzoneLevel, StringFormat=F2}" Width="80"/>
+                            <DataGridTextColumn Header="PM2.5 (µg/m³)" Binding="{Binding PM25, StringFormat=F2}" Width="110"/>
+                            <DataGridTextColumn Header="NO2 (µg/m³)" Binding="{Binding NO2Level, StringFormat=F2}" Width="100"/>
+                            <DataGridTextColumn Header="O3 (µg/m³)" Binding="{Binding OzoneLevel, StringFormat=F2}" Width="100"/>
                             <DataGridTextColumn Header="State" Binding="{Binding State}" Width="100"/>
                         </DataGrid.Columns>
                     </DataGrid>
@@ -177,15 +178,15 @@
                                 <DatePicker SelectedDate="{Binding NewReadingTime}" 
                                             Grid.Row="0" Grid.Column="3" Margin="5"/>
 
-                                <TextBlock Text="PM2.5:" Grid.Row="1" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
+                                <TextBlock Text="PM2.5 (µg/m³):" Grid.Row="1" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
                                 <TextBox Text="{Binding NewReadingPM25, UpdateSourceTrigger=PropertyChanged}" 
                                          Grid.Row="1" Grid.Column="1" Margin="5"/>
 
-                                <TextBlock Text="NO2 Level:" Grid.Row="1" Grid.Column="2" Margin="5" VerticalAlignment="Center"/>
+                                <TextBlock Text="NO2 (µg/m³):" Grid.Row="1" Grid.Column="2" Margin="5" VerticalAlignment="Center"/>
                                 <TextBox Text="{Binding NewReadingNO2, UpdateSourceTrigger=PropertyChanged}" 
                                          Grid.Row="1" Grid.Column="3" Margin="5"/>
 
-                                <TextBlock Text="Ozone Level:" Grid.Row="2" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
+                                <TextBlock Text="O3 (µg/m³):" Grid.Row="2" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
                                 <TextBox Text="{Binding NewReadingOzone, UpdateSourceTrigger=PropertyChanged}" 
                                          Grid.Row="2" Grid.Column="1" Margin="5"/>
                             </Grid>
@@ -205,13 +206,12 @@
 
             <!-- Statistics Tab -->
             <TabItem Header="State Statistics">
-                <Grid Margin="10">
-                    <GroupBox Header="Air Quality State Distribution">
-                        <lvc:PieChart Series="{Binding StateSeries}" 
-                                      LegendPosition="Right"
-                                      MinHeight="400"/>
-                    </GroupBox>
-                </Grid>
+                <GroupBox Header="Air Quality State Distribution" Margin="10">
+                    <lvc:PieChart Series="{Binding StateSeries}" 
+                      LegendPosition="Right"
+                      MinHeight="300"
+                      Background="White"/>
+                </GroupBox>
             </TabItem>
 
         </TabControl>

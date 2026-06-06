@@ -1,94 +1,67 @@
 ﻿using System;
-using System.ComponentModel;
-using System.Runtime.CompilerServices;
+using System.Collections.Generic;
+using AirQualityInformationSystem.Interfaces;
+using AirQualityInformationSystem.States;
 
 namespace AirQualityInformationSystem.Models
 {
-    public class AirQualityReading : INotifyPropertyChanged
+    public class AirQualityReading : ISubject
     {
-        private Guid _id;
-        private Guid _stationId;
-        private DateTime _readingTime;
-        private double _pm25;
-        private double _no2Level;
-        private double _ozoneLevel;
-        private AirQualityState _state;
+        private readonly List<IObserver> observers = new List<IObserver>();
 
-        public Guid Id
+        private IAirQualityState currentState;
+
+        public Guid Id { get; set; }
+
+        public Guid StationId { get; set; }
+
+        public DateTime ReadingTime { get; set; }
+
+        public double PM25 { get; set; }
+
+        public double NO2Level { get; set; }
+
+        public double OzoneLevel { get; set; }
+
+        public AirQualityState State { get; set; }
+
+        public AirQualityReading()
         {
-            get => _id;
-            set
-            {
-                _id = value;
-                OnPropertyChanged();
-            }
+            Id = Guid.NewGuid();
+            EvaluateState();
         }
 
-        public Guid StationId
+        public void EvaluateState()
         {
-            get => _stationId;
-            set
-            {
-                _stationId = value;
-                OnPropertyChanged();
-            }
+            if (PM25 < 15 && NO2Level < 40)
+                currentState = new GoodState();
+            else if (PM25 < 35 && NO2Level < 80)
+                currentState = new ModerateState();
+            else if (PM25 < 75)
+                currentState = new UnhealthyState();
+            else
+                currentState = new HazardousState();
+
+            currentState.Handle(this);
+            NotifyObservers();
         }
 
-        public DateTime ReadingTime
+        public void Register(IObserver observer)
         {
-            get => _readingTime;
-            set
-            {
-                _readingTime = value;
-                OnPropertyChanged();
-            }
+            observers.Add(observer);
         }
 
-        public double PM25
+        public void Unregister(IObserver observer)
         {
-            get => _pm25;
-            set
-            {
-                _pm25 = value;
-                OnPropertyChanged();
-            }
+            observers.Remove(observer);
         }
 
-        public double NO2Level
+        public void NotifyObservers()
         {
-            get => _no2Level;
-            set
+            foreach (var observer in observers)
             {
-                _no2Level = value;
-                OnPropertyChanged();
+                observer.Update();
             }
-        }
-
-        public double OzoneLevel
-        {
-            get => _ozoneLevel;
-            set
-            {
-                _ozoneLevel = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public AirQualityState State
-        {
-            get => _state;
-            set
-            {
-                _state = value;
-                OnPropertyChanged();
-            }
-        }
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        protected virtual void OnPropertyChanged([CallerMemberName] string propertyName = null)
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
     }
 }
