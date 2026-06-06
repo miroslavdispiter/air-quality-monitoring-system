@@ -1,0 +1,92 @@
+﻿<UserControl x:Class="AirQualityInformationSystem.Views.AirQualityReadingsView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             mc:Ignorable="d" 
+             d:DesignHeight="600" d:DesignWidth="800">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Search Bar -->
+        <GroupBox Header="Search Readings" Grid.Row="0" Margin="0,0,0,10">
+            <StackPanel Orientation="Horizontal">
+                <TextBox Text="{Binding ReadingSearchText, UpdateSourceTrigger=PropertyChanged}" 
+                         Width="300" Margin="5"/>
+                <TextBlock Text="Search by: StationId, Time, PM2.5, NO2, Ozone, State" 
+                           VerticalAlignment="Center" Margin="10,0"/>
+            </StackPanel>
+        </GroupBox>
+
+        <!-- Readings List -->
+        <DataGrid Grid.Row="1" 
+                  ItemsSource="{Binding FilteredReadings}" 
+                  SelectedItem="{Binding SelectedReading}"
+                  AutoGenerateColumns="False"
+                  CanUserAddRows="False"
+                  Margin="0,0,0,10"
+                  IsReadOnly="True">
+            <DataGrid.Columns>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="200"/>
+                <DataGridTextColumn Header="Station ID" Binding="{Binding StationId}" Width="200"/>
+                <DataGridTextColumn Header="Reading Time" Binding="{Binding ReadingTime, StringFormat='yyyy-MM-dd HH:mm:ss'}" Width="150"/>
+                <DataGridTextColumn Header="PM2.5 (µg/m³)" Binding="{Binding PM25, StringFormat=F2}" Width="110"/>
+                <DataGridTextColumn Header="NO2 (µg/m³)" Binding="{Binding NO2Level, StringFormat=F2}" Width="100"/>
+                <DataGridTextColumn Header="O3 (µg/m³)" Binding="{Binding OzoneLevel, StringFormat=F2}" Width="100"/>
+                <DataGridTextColumn Header="State" Binding="{Binding State}" Width="100"/>
+            </DataGrid.Columns>
+        </DataGrid>
+
+        <!-- Add/Update/Delete Reading -->
+        <GroupBox Header="Reading Management" Grid.Row="2">
+            <StackPanel>
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <TextBlock Text="Station ID:" Grid.Row="0" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding NewReadingStationId, UpdateSourceTrigger=PropertyChanged}" 
+                             Grid.Row="0" Grid.Column="1" Margin="5"/>
+
+                    <TextBlock Text="Reading Time:" Grid.Row="0" Grid.Column="2" Margin="5" VerticalAlignment="Center"/>
+                    <DatePicker SelectedDate="{Binding NewReadingTime}" 
+                                Grid.Row="0" Grid.Column="3" Margin="5"/>
+
+                    <TextBlock Text="PM2.5 (µg/m³):" Grid.Row="1" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding NewReadingPM25, UpdateSourceTrigger=PropertyChanged}" 
+                             Grid.Row="1" Grid.Column="1" Margin="5"/>
+
+                    <TextBlock Text="NO2 (µg/m³):" Grid.Row="1" Grid.Column="2" Margin="5" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding NewReadingNO2, UpdateSourceTrigger=PropertyChanged}" 
+                             Grid.Row="1" Grid.Column="3" Margin="5"/>
+
+                    <TextBlock Text="O3 (µg/m³):" Grid.Row="2" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
+                    <TextBox Text="{Binding NewReadingOzone, UpdateSourceTrigger=PropertyChanged}" 
+                             Grid.Row="2" Grid.Column="1" Margin="5"/>
+                </Grid>
+
+                <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="5">
+                    <Button Content="Add Reading" Command="{Binding AddReadingCommand}" 
+                            Padding="10,5" Margin="0,0,5,0"/>
+                    <Button Content="Update Selected" Command="{Binding UpdateReadingCommand}" 
+                            Padding="10,5" Margin="0,0,5,0"/>
+                    <Button Content="Delete Selected" Command="{Binding DeleteReadingCommand}" 
+                            Padding="10,5"/>
+                </StackPanel>
+            </StackPanel>
+        </GroupBox>
+    </Grid>
+</UserControl>

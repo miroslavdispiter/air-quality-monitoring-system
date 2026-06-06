@@ -155,9 +155,14 @@
     <Compile Include="States\HazardousState.cs" />
     <Compile Include="States\ModerateState.cs" />
     <Compile Include="States\UnhealthyState.cs" />
-    <Compile Include="ViewModels\AirQualityChartViewModel.cs" />
+    <Compile Include="ViewModels\AirQualityReadingsViewModel.cs" />
     <Compile Include="ViewModels\BaseViewModel.cs" />
     <Compile Include="ViewModels\MainViewModel.cs" />
+    <Compile Include="ViewModels\MonitoringStationsViewModel.cs" />
+    <Compile Include="ViewModels\StateStatisticsViewModel.cs" />
+    <Compile Include="Views\AirQualityReadingsView.xaml.cs">
+      <DependentUpon>AirQualityReadingsView.xaml</DependentUpon>
+    </Compile>
     <Compile Include="Views\MainWindow.xaml.cs">
       <DependentUpon>MainWindow.xaml</DependentUpon>
     </Compile>
@@ -166,7 +171,25 @@
       <SubType>Code</SubType>
     </Compile>
     <Compile Include="Helpers\RelayCommand.cs" />
+    <Compile Include="Views\MonitoringStationsView.xaml.cs">
+      <DependentUpon>MonitoringStationsView.xaml</DependentUpon>
+    </Compile>
+    <Compile Include="Views\StateStatisticsView.xaml.cs">
+      <DependentUpon>StateStatisticsView.xaml</DependentUpon>
+    </Compile>
+    <Page Include="Views\AirQualityReadingsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
     <Page Include="Views\MainWindow.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\MonitoringStationsView.xaml">
+      <SubType>Designer</SubType>
+      <Generator>MSBuild:Compile</Generator>
+    </Page>
+    <Page Include="Views\StateStatisticsView.xaml">
       <SubType>Designer</SubType>
       <Generator>MSBuild:Compile</Generator>
     </Page>
