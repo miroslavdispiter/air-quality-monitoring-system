@@ -276,9 +276,23 @@ namespace AirQualityStatistics.ViewModels
 
                 var result = context.Execute(allReadings);
 
-                var unit = SelectedStatisticsMethod.Contains("Count") ? "occurrences" : "µg/m³";
-                StatisticsResult = $"{SelectedStatisticsMethod}: {result:F2} {unit}\n(Based on {allReadings.Count} total readings)";
-                StatusMessage = $"Statistics calculated successfully: {result:F2} {unit}";
+                string formattedResult;
+                string unit;
+
+                if (SelectedStatisticsMethod.Contains("Count"))
+                {
+                    int count = (int)result;
+                    formattedResult = count.ToString();
+                    unit = count == 1 ? "occurrence" : "occurrences";
+                }
+                else
+                {
+                    formattedResult = result.ToString("F2");
+                    unit = "µg/m³";
+                }
+
+                StatisticsResult = $"{SelectedStatisticsMethod}: {formattedResult} {unit}\n(Based on {allReadings.Count} total readings)";
+                StatusMessage = $"Statistics calculated successfully: {formattedResult} {unit}";
             }
             catch (Exception ex)
             {

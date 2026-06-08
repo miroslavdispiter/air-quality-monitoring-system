@@ -62,8 +62,12 @@
                              Grid.Row="0" Grid.Column="1" Margin="5"/>
 
                     <TextBlock Text="Reading Time:" Grid.Row="0" Grid.Column="2" Margin="5" VerticalAlignment="Center"/>
-                    <DatePicker SelectedDate="{Binding NewReadingTime}" 
-                                Grid.Row="0" Grid.Column="3" Margin="5"/>
+                    <StackPanel Grid.Row="0" Grid.Column="3" Orientation="Horizontal" Margin="5">
+                        <DatePicker SelectedDate="{Binding NewReadingDate}" Width="120" Margin="0,0,5,0"/>
+                        <TextBox Text="{Binding NewReadingTimeString, UpdateSourceTrigger=PropertyChanged}" 
+                                 Width="60" 
+                                 ToolTip="Format: HH:mm (e.g., 14:30)"/>
+                    </StackPanel>
 
                     <TextBlock Text="PM2.5 (µg/m³):" Grid.Row="1" Grid.Column="0" Margin="5" VerticalAlignment="Center"/>
                     <TextBox Text="{Binding NewReadingPM25, UpdateSourceTrigger=PropertyChanged}" 

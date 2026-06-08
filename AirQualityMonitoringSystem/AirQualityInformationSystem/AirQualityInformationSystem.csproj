@@ -153,6 +153,7 @@
     <Compile Include="Services\Persistence\JsonPersistenceStrategy.cs" />
     <Compile Include="Services\Persistence\PersistenceContext.cs" />
     <Compile Include="Services\Persistence\PersistenceData.cs" />
+    <Compile Include="Services\Persistence\XmlPersistenceStrategy.cs" />
     <Compile Include="Services\StateSimulationService.cs" />
     <Compile Include="States\GoodState.cs" />
     <Compile Include="States\HazardousState.cs" />
@@ -224,9 +225,9 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-	    <Compile Include="Services\WCF\IAirQualityService.cs" />
-	    <Compile Include="Services\WCF\AirQualityService.cs" />
-	    <Compile Include="Services\WCF\WcfServiceHost.cs" />
+    <Compile Include="Services\WCF\IAirQualityService.cs" />
+    <Compile Include="Services\WCF\AirQualityService.cs" />
+    <Compile Include="Services\WCF\WcfServiceHost.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />

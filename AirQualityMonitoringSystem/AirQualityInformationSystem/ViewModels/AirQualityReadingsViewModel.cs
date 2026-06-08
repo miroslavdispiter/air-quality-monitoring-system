@@ -45,7 +45,8 @@ namespace AirQualityInformationSystem.ViewModels
                 if (value != null)
                 {
                     NewReadingStationId = value.StationId.ToString();
-                    NewReadingTime = value.ReadingTime;
+                    NewReadingDate = value.ReadingTime.Date;
+                    NewReadingTimeString = value.ReadingTime.ToString("HH:mm");
                     NewReadingPM25 = value.PM25.ToString();
                     NewReadingNO2 = value.NO2Level.ToString();
                     NewReadingOzone = value.OzoneLevel.ToString();
@@ -85,6 +86,38 @@ namespace AirQualityInformationSystem.ViewModels
         {
             get => newReadingTime;
             set { newReadingTime = value; OnPropertyChanged(); }
+        }
+
+        private DateTime newReadingDate = DateTime.Now.Date;
+        public DateTime NewReadingDate
+        {
+            get => newReadingDate;
+            set
+            {
+                newReadingDate = value;
+                UpdateNewReadingTime();
+                OnPropertyChanged();
+            }
+        }
+
+        private string newReadingTimeString = DateTime.Now.ToString("HH:mm");
+        public string NewReadingTimeString
+        {
+            get => newReadingTimeString;
+            set
+            {
+                newReadingTimeString = value;
+                UpdateNewReadingTime();
+                OnPropertyChanged();
+            }
+        }
+
+        private void UpdateNewReadingTime()
+        {
+            if (TimeSpan.TryParse(NewReadingTimeString, out var time))
+            {
+                NewReadingTime = NewReadingDate.Date.Add(time);
+            }
         }
 
         private string newReadingPM25;
@@ -309,7 +342,8 @@ namespace AirQualityInformationSystem.ViewModels
         private void ClearReadingInputs()
         {
             NewReadingStationId = string.Empty;
-            NewReadingTime = DateTime.Now;
+            NewReadingDate = DateTime.Now.Date;
+            NewReadingTimeString = DateTime.Now.ToString("HH:mm");
             NewReadingPM25 = string.Empty;
             NewReadingNO2 = string.Empty;
             NewReadingOzone = string.Empty;
@@ -326,7 +360,9 @@ namespace AirQualityInformationSystem.ViewModels
                 var search = ReadingSearchText.ToLower();
                 filtered = filtered.Where(r =>
                     r.StationId.ToString().ToLower().Contains(search) ||
-                    r.ReadingTime.ToString().ToLower().Contains(search) ||
+                    r.ReadingTime.ToString("yyyy-MM-dd HH:mm:ss").Contains(search) ||
+                    r.ReadingTime.ToString("dd/MM/yyyy").Contains(search) ||
+                    r.ReadingTime.ToString("MM/yyyy").Contains(search) ||
                     r.PM25.ToString().Contains(search) ||
                     r.NO2Level.ToString().Contains(search) ||
                     r.OzoneLevel.ToString().Contains(search) ||
