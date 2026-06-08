@@ -38,6 +38,7 @@ namespace AirQualityInformationSystem.ViewModels
 
         public MainViewModel()
         {
+            // 1. Inicijalizuj servise
             stationRepo = new MonitoringStationRepository();
             readingRepo = new AirQualityRepository();
             commandManager = new CommandManager();
@@ -46,26 +47,32 @@ namespace AirQualityInformationSystem.ViewModels
 
             persistenceContext.SetStrategy(new JsonPersistenceStrategy());
 
+            // 2. PRVO učitaj podatke
             InitializeData();
 
+            // 3. Initialize child ViewModels
             MonitoringStationsVM = new MonitoringStationsViewModel(stationRepo, commandManager, logger);
             AirQualityReadingsVM = new AirQualityReadingsViewModel(readingRepo, commandManager, logger);
             StateStatisticsVM = new StateStatisticsViewModel(readingRepo);
 
+            // Subscribe to data change events
             MonitoringStationsVM.OnDataChanged += OnDataChanged;
             AirQualityReadingsVM.OnDataChanged += OnDataChanged;
 
+            // Commands
             UndoCommand = new RelayCommand(Undo);
             RedoCommand = new RelayCommand(Redo);
             SaveDataCommand = new RelayCommand(SaveData);
             LoadDataCommand = new RelayCommand(LoadData);
 
+            // 4. POSLE učitavanja podataka pokreni WCF
             wcfServiceHost = new WcfServiceHost(readingRepo, stationRepo);
             try
             {
                 wcfServiceHost.Start();
                 logger.Log("WCF Service started successfully");
 
+                // Debug: proveri koliko stanica ima
                 var stationCount = stationRepo.GetAll().Count();
                 logger.Log($"WCF Service initialized with {stationCount} stations");
             }

@@ -37,6 +37,8 @@
   <ItemGroup>
     <Reference Include="System" />
     <Reference Include="System.Data" />
+    <Reference Include="System.Runtime.Serialization" />
+    <Reference Include="System.ServiceModel" />
     <Reference Include="System.Xml" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Core" />
@@ -89,35 +91,26 @@
       <Generator>SettingsSingleFileGenerator</Generator>
       <LastGenOutput>Settings.Designer.cs</LastGenOutput>
     </None>
-    <None Include="Models\MonitoringStation.cs" />
-    <None Include="Models\AirQualityReading.cs" />
-    <None Include="Models\AirQualityState.cs" />
-    <None Include="Models\StationReadingsGroup.cs" />
-    <None Include="Interfaces\IAirQualityDataProvider.cs" />
-    <None Include="Interfaces\IStatisticsStrategy.cs" />
-    <None Include="Services\WCF\IAirQualityService.cs" />
-    <None Include="Services\WCF\WcfAirQualityAdapter.cs" />
-    <None Include="Services\StatisticsStorage.cs" />
-    <None Include="Services\StatisticsContext.cs" />
-    <None Include="Helpers\RelayCommand.cs" />
-    <None Include="ViewModels\BaseViewModel.cs" />
-    <None Include="Strategies\AveragePM25Strategy.cs" />
-    <None Include="Strategies\MaxNO2Strategy.cs" />
-    <None Include="Strategies\HazardousCountStrategy.cs" />
-    <None Include="ViewModels\StatisticsViewModel.cs" />
+    <Compile Include="Models\MonitoringStation.cs" />
+    <Compile Include="Models\AirQualityReading.cs" />
+    <Compile Include="Models\AirQualityState.cs" />
+    <Compile Include="Models\StationReadingsGroup.cs" />
+    <Compile Include="Interfaces\IAirQualityDataProvider.cs" />
+    <Compile Include="Interfaces\IStatisticsStrategy.cs" />
+    <Compile Include="Services\WCF\IAirQualityService.cs" />
+    <Compile Include="Services\WCF\WcfAirQualityAdapter.cs" />
+    <Compile Include="Services\StatisticsStorage.cs" />
+    <Compile Include="Services\StatisticsContext.cs" />
+    <Compile Include="Helpers\RelayCommand.cs" />
+    <Compile Include="ViewModels\BaseViewModel.cs" />
+    <Compile Include="Strategies\AveragePM25Strategy.cs" />
+    <Compile Include="Strategies\MaxNO2Strategy.cs" />
+    <Compile Include="Strategies\HazardousCountStrategy.cs" />
+    <Compile Include="ViewModels\StatisticsViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="Models\" />
-    <Folder Include="Interfaces\" />
-    <Folder Include="Services\" />
-    <Folder Include="Services\WCF\" />
-    <Folder Include="Helpers\" />
-    <Folder Include="ViewModels\" />
-    <Folder Include="Views\" />
-    <Folder Include="Strategies\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>

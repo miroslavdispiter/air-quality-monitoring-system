@@ -10,3 +10,7 @@
 2026-06-06 16:44:54 - Application started
 2026-06-06 17:16:33 - Application started
 2026-06-06 17:32:54 - Application started
+2026-06-08 22:18:42 - Loaded 3 default stations and 9 default readings
+2026-06-08 22:18:43 - WCF Service started successfully
+2026-06-08 22:18:43 - WCF Service initialized with 3 stations
+2026-06-08 22:18:43 - Application started
