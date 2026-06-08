@@ -37,7 +37,7 @@ namespace AirQualityStatistics.ViewModels
             {
                 selectedStation = value;
                 OnPropertyChanged();
-                LoadDataCommand.RaiseCanExecuteChanged();
+                LoadDataCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -85,7 +85,7 @@ namespace AirQualityStatistics.ViewModels
             {
                 selectedStatisticsMethod = value;
                 OnPropertyChanged();
-                ApplyStatisticsCommand.RaiseCanExecuteChanged();
+                ApplyStatisticsCommand?.RaiseCanExecuteChanged();
             }
         }
 
@@ -104,7 +104,7 @@ namespace AirQualityStatistics.ViewModels
         }
 
         public List<int> AvailableMonths { get; } = Enumerable.Range(1, 12).ToList();
-        public List<int> AvailableYears { get; } = Enumerable.Range(2020, 11).ToList(); // 2020-2030
+        public List<int> AvailableYears { get; } = Enumerable.Range(2020, 11).ToList();
 
         #endregion
 
@@ -139,9 +139,9 @@ namespace AirQualityStatistics.ViewModels
             ExportToCsvCommand = new RelayCommand(ExportToCsv, () => LoadedDataGroups.Any());
             ClearDataCommand = new RelayCommand(ClearData, () => LoadedDataGroups.Any());
 
-            LoadStations();
-
             StatusMessage = "Ready. Please select a station and load data.";
+
+            LoadStations();
         }
 
         #region Methods
@@ -233,16 +233,16 @@ namespace AirQualityStatistics.ViewModels
                 LoadedDataGroups.Add(group);
             }
 
-            ExportToCsvCommand.RaiseCanExecuteChanged();
-            ClearDataCommand.RaiseCanExecuteChanged();
+            ExportToCsvCommand?.RaiseCanExecuteChanged();
+            ClearDataCommand?.RaiseCanExecuteChanged();
         }
 
-        public double ApplyStatistics()
+        private void ApplyStatistics()
         {
             if (string.IsNullOrEmpty(SelectedStatisticsMethod))
             {
                 MessageBox.Show("Please select a statistics method.", "No Method Selected", MessageBoxButton.OK, MessageBoxImage.Warning);
-                return 0;
+                return;
             }
 
             try
@@ -260,7 +260,7 @@ namespace AirQualityStatistics.ViewModels
                         break;
                     default:
                         MessageBox.Show("Unknown statistics method.", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-                        return 0;
+                        return;
                 }
 
                 var allReadings = storage.GetAll()
@@ -271,7 +271,7 @@ namespace AirQualityStatistics.ViewModels
                 {
                     MessageBox.Show("No data available. Please load data first.", "No Data", MessageBoxButton.OK, MessageBoxImage.Warning);
                     StatisticsResult = "No data available";
-                    return 0;
+                    return;
                 }
 
                 var result = context.Execute(allReadings);
@@ -279,8 +279,6 @@ namespace AirQualityStatistics.ViewModels
                 var unit = SelectedStatisticsMethod.Contains("Count") ? "occurrences" : "µg/m³";
                 StatisticsResult = $"{SelectedStatisticsMethod}: {result:F2} {unit}\n(Based on {allReadings.Count} total readings)";
                 StatusMessage = $"Statistics calculated successfully: {result:F2} {unit}";
-
-                return result;
             }
             catch (Exception ex)
             {
@@ -290,7 +288,6 @@ namespace AirQualityStatistics.ViewModels
                     "Error",
                     MessageBoxButton.OK,
                     MessageBoxImage.Error);
-                return 0;
             }
         }
 
@@ -353,8 +350,8 @@ namespace AirQualityStatistics.ViewModels
                 LoadedDataGroups.Clear();
                 StatisticsResult = string.Empty;
                 StatusMessage = "All data cleared.";
-                ExportToCsvCommand.RaiseCanExecuteChanged();
-                ClearDataCommand.RaiseCanExecuteChanged();
+                ExportToCsvCommand?.RaiseCanExecuteChanged();
+                ClearDataCommand?.RaiseCanExecuteChanged();
             }
         }
 

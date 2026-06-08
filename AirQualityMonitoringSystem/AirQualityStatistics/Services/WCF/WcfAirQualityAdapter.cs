@@ -8,27 +8,50 @@ namespace AirQualityStatistics.Services.WCF
 {
     public class WcfAirQualityAdapter : IAirQualityDataProvider
     {
-        private readonly IAirQualityService service;
-        private readonly ChannelFactory<IAirQualityService> channelFactory;
+        private IAirQualityService service;
+        private ChannelFactory<IAirQualityService> channelFactory;
 
         public WcfAirQualityAdapter()
         {
-            var binding = new BasicHttpBinding();
-            var endpoint = new EndpointAddress("http://localhost:8733/AirQualityService/");
+            try
+            {
+                var binding = new NetNamedPipeBinding
+                {
+                    MaxReceivedMessageSize = 2147483647,
+                    MaxBufferSize = 2147483647,
+                    MaxBufferPoolSize = 2147483647,
+                    OpenTimeout = TimeSpan.FromSeconds(10),
+                    CloseTimeout = TimeSpan.FromSeconds(10),
+                    SendTimeout = TimeSpan.FromSeconds(10),
+                    ReceiveTimeout = TimeSpan.FromMinutes(10)
+                };
 
-            channelFactory = new ChannelFactory<IAirQualityService>(binding, endpoint);
-            service = channelFactory.CreateChannel();
+                var endpoint = new EndpointAddress("net.pipe://localhost/AirQualityService");
+
+                channelFactory = new ChannelFactory<IAirQualityService>(binding, endpoint);
+                service = channelFactory.CreateChannel();
+
+                System.Diagnostics.Debug.WriteLine("✓ WCF Client connected to net.pipe://localhost/AirQualityService");
+            }
+            catch (Exception ex)
+            {
+                System.Diagnostics.Debug.WriteLine($"✗ WCF Client connection failed: {ex.Message}");
+                throw new Exception($"WCF connection error: {ex.Message}", ex);
+            }
         }
 
         public List<AirQualityReading> GetReadings(Guid stationId, int month, int year)
         {
             try
             {
-                return service.GetReadingsForStation(stationId, month, year);
+                System.Diagnostics.Debug.WriteLine($"Requesting readings for {stationId}, {month}/{year}");
+                var result = service.GetReadingsForStation(stationId, month, year);
+                System.Diagnostics.Debug.WriteLine($"Received {result.Count} readings");
+                return result;
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to retrieve readings from WCF service: {ex.Message}", ex);
+                throw new Exception($"Failed to retrieve readings: {ex.Message}", ex);
             }
         }
 
@@ -36,11 +59,14 @@ namespace AirQualityStatistics.Services.WCF
         {
             try
             {
-                return service.GetAllStations();
+                System.Diagnostics.Debug.WriteLine("Requesting all stations");
+                var result = service.GetAllStations();
+                System.Diagnostics.Debug.WriteLine($"Received {result.Count} stations");
+                return result;
             }
             catch (Exception ex)
             {
-                throw new Exception($"Failed to retrieve stations from WCF service: {ex.Message}", ex);
+                throw new Exception($"WCF communication error: {ex.Message}.", ex);
             }
         }
 
@@ -55,7 +81,6 @@ namespace AirQualityStatistics.Services.WCF
                     else
                         commObj.Close();
                 }
-
                 channelFactory?.Close();
             }
             catch

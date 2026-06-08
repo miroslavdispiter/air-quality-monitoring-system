@@ -1,11 +1,9 @@
 ﻿using System;
-
-using System;
 using System.Runtime.Serialization;
 
 namespace AirQualityInformationSystem.Models
 {
-    [DataContract]
+    [DataContract(Namespace = "http://airquality.models/2024")]
     public class MonitoringStation
     {
         [DataMember]

@@ -46,6 +46,8 @@ namespace AirQualityInformationSystem.ViewModels
 
             persistenceContext.SetStrategy(new JsonPersistenceStrategy());
 
+            InitializeData();
+
             MonitoringStationsVM = new MonitoringStationsViewModel(stationRepo, commandManager, logger);
             AirQualityReadingsVM = new AirQualityReadingsViewModel(readingRepo, commandManager, logger);
             StateStatisticsVM = new StateStatisticsViewModel(readingRepo);
@@ -58,13 +60,14 @@ namespace AirQualityInformationSystem.ViewModels
             SaveDataCommand = new RelayCommand(SaveData);
             LoadDataCommand = new RelayCommand(LoadData);
 
-            InitializeData();
-
             wcfServiceHost = new WcfServiceHost(readingRepo, stationRepo);
             try
             {
                 wcfServiceHost.Start();
                 logger.Log("WCF Service started successfully");
+
+                var stationCount = stationRepo.GetAll().Count();
+                logger.Log($"WCF Service initialized with {stationCount} stations");
             }
             catch (Exception ex)
             {
@@ -89,6 +92,7 @@ namespace AirQualityInformationSystem.ViewModels
             {
                 stationRepo.LoadAll(loadedData.Stations);
                 readingRepo.LoadAll(loadedData.Readings);
+                logger?.Log($"Loaded {loadedData.Stations.Count} stations and {loadedData.Readings.Count} readings from file");
             }
             else
             {
@@ -102,6 +106,8 @@ namespace AirQualityInformationSystem.ViewModels
                 {
                     reading.EvaluateState();
                 }
+
+                logger?.Log($"Loaded {defaultStations.Count} default stations and {defaultReadings.Count} default readings");
             }
 
             RefreshAllViewModels();
@@ -109,14 +115,14 @@ namespace AirQualityInformationSystem.ViewModels
 
         private void RefreshAllViewModels()
         {
-            MonitoringStationsVM.RefreshStations();
-            AirQualityReadingsVM.RefreshReadings();
-            StateStatisticsVM.UpdateChart();
+            MonitoringStationsVM?.RefreshStations();
+            AirQualityReadingsVM?.RefreshReadings();
+            StateStatisticsVM?.UpdateChart();
         }
 
         private void OnDataChanged()
         {
-            StateStatisticsVM.UpdateChart();
+            StateStatisticsVM?.UpdateChart();
         }
 
         #region Undo/Redo

@@ -3,7 +3,7 @@ using System.Runtime.Serialization;
 
 namespace AirQualityStatistics.Models
 {
-    [DataContract]
+    [DataContract(Namespace = "http://airquality.models/2024")]
     public class AirQualityReading
     {
         [DataMember]

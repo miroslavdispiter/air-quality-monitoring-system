@@ -44,7 +44,8 @@ namespace AirQualityStatistics.Services
         {
             return data.Select(kvp =>
             {
-                var parts = kvp.Key.Split('-');
+                var parts = kvp.Key.Split('|');
+
                 return new StationReadingsGroup
                 {
                     Key = kvp.Key,
@@ -63,7 +64,7 @@ namespace AirQualityStatistics.Services
 
         public static string GenerateKey(Guid stationId, int month, int year)
         {
-            return $"{stationId}-{month}-{year}";
+            return $"{stationId}|{month}|{year}";
         }
     }
 }

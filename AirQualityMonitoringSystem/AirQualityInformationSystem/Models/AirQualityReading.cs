@@ -6,7 +6,7 @@ using AirQualityInformationSystem.States;
 
 namespace AirQualityInformationSystem.Models
 {
-    [DataContract]
+    [DataContract(Namespace = "http://airquality.models/2024")]
     public class AirQualityReading : ISubject
     {
         private readonly List<IObserver> observers = new List<IObserver>();

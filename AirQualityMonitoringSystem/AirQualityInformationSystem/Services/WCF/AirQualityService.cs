@@ -1,26 +1,37 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.ServiceModel;
 using AirQualityInformationSystem.Models;
 using AirQualityInformationSystem.Repositories;
 
 namespace AirQualityInformationSystem.Services.WCF
 {
+    [ServiceBehavior(InstanceContextMode = InstanceContextMode.Single, ConcurrencyMode = ConcurrencyMode.Multiple)]
     public class AirQualityService : IAirQualityService
     {
-        private readonly AirQualityRepository readingRepository;
-        private readonly MonitoringStationRepository stationRepository;
+        private static AirQualityRepository readingRepository;
+        private static MonitoringStationRepository stationRepository;
 
-        public AirQualityService(
-            AirQualityRepository readingRepository,
-            MonitoringStationRepository stationRepository)
+        public static void Initialize(AirQualityRepository readingRepo, MonitoringStationRepository stationRepo)
         {
-            this.readingRepository = readingRepository;
-            this.stationRepository = stationRepository;
+            readingRepository = readingRepo;
+            stationRepository = stationRepo;
+        }
+
+        public AirQualityService()
+        {
+            
         }
 
         public List<AirQualityReading> GetReadingsForStation(Guid stationId, int month, int year)
         {
+
+            if (readingRepository == null)
+            {
+                return new List<AirQualityReading>();
+            }
+
             var readings = readingRepository.GetAll()
                 .Where(r => r.StationId == stationId &&
                             r.ReadingTime.Month == month &&
@@ -32,7 +43,15 @@ namespace AirQualityInformationSystem.Services.WCF
 
         public List<MonitoringStation> GetAllStations()
         {
-            return stationRepository.GetAll().ToList();
+
+            if (stationRepository == null)
+            {
+                return new List<MonitoringStation>();
+            }
+
+            var stations = stationRepository.GetAll().ToList();
+
+            return stations;
         }
     }
 }
