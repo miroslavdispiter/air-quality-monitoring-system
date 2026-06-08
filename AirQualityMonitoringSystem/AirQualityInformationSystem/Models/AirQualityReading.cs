@@ -1,28 +1,36 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.Serialization;
 using AirQualityInformationSystem.Interfaces;
 using AirQualityInformationSystem.States;
 
 namespace AirQualityInformationSystem.Models
 {
+    [DataContract]
     public class AirQualityReading : ISubject
     {
         private readonly List<IObserver> observers = new List<IObserver>();
-
         private IAirQualityState currentState;
 
+        [DataMember]
         public Guid Id { get; set; }
 
+        [DataMember]
         public Guid StationId { get; set; }
 
+        [DataMember]
         public DateTime ReadingTime { get; set; }
 
+        [DataMember]
         public double PM25 { get; set; }
 
+        [DataMember]
         public double NO2Level { get; set; }
 
+        [DataMember]
         public double OzoneLevel { get; set; }
 
+        [DataMember]
         public AirQualityState State { get; set; }
 
         public AirQualityReading()

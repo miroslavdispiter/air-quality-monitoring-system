@@ -3,6 +3,7 @@ using AirQualityInformationSystem.Helpers;
 using AirQualityInformationSystem.Repositories;
 using AirQualityInformationSystem.Services.Logging;
 using AirQualityInformationSystem.Services.Persistence;
+using AirQualityInformationSystem.Services.WCF;
 using System;
 using System.Linq;
 using System.Windows;
@@ -16,6 +17,7 @@ namespace AirQualityInformationSystem.ViewModels
         private readonly CommandManager commandManager;
         private readonly PersistenceContext persistenceContext;
         private readonly LoggerService logger;
+        private readonly WcfServiceHost wcfServiceHost;
 
         #region Child ViewModels
 
@@ -44,16 +46,13 @@ namespace AirQualityInformationSystem.ViewModels
 
             persistenceContext.SetStrategy(new JsonPersistenceStrategy());
 
-            // Initialize child ViewModels
             MonitoringStationsVM = new MonitoringStationsViewModel(stationRepo, commandManager, logger);
             AirQualityReadingsVM = new AirQualityReadingsViewModel(readingRepo, commandManager, logger);
             StateStatisticsVM = new StateStatisticsViewModel(readingRepo);
 
-            // Subscribe to data change events
             MonitoringStationsVM.OnDataChanged += OnDataChanged;
             AirQualityReadingsVM.OnDataChanged += OnDataChanged;
 
-            // Commands
             UndoCommand = new RelayCommand(Undo);
             RedoCommand = new RelayCommand(Redo);
             SaveDataCommand = new RelayCommand(SaveData);
@@ -61,7 +60,25 @@ namespace AirQualityInformationSystem.ViewModels
 
             InitializeData();
 
+            wcfServiceHost = new WcfServiceHost(readingRepo, stationRepo);
+            try
+            {
+                wcfServiceHost.Start();
+                logger.Log("WCF Service started successfully");
+            }
+            catch (Exception ex)
+            {
+                logger.Log($"Failed to start WCF Service: {ex.Message}");
+                MessageBox.Show($"Warning: WCF Service failed to start.\n{ex.Message}",
+                    "WCF Warning", MessageBoxButton.OK, MessageBoxImage.Warning);
+            }
+
             logger.Log("Application started");
+        }
+
+        ~MainViewModel()
+        {
+            wcfServiceHost?.Stop();
         }
 
         private void InitializeData()
