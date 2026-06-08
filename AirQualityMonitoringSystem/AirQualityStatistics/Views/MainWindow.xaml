@@ -3,13 +3,194 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:vm="clr-namespace:AirQualityStatistics.ViewModels"
         mc:Ignorable="d"
-        Title="Air Quality Statistics - Component 2" Height="600" Width="900"
+        Title="Air Quality Statistics - Component 2" 
+        Height="750" 
+        Width="1000"
         WindowStartupLocation="CenterScreen">
-    <Grid>
-        <TextBlock Text="Component 2 - Infrastructure Ready" 
+    
+    <Window.DataContext>
+        <vm:StatisticsViewModel/>
+    </Window.DataContext>
+
+    <Grid Margin="15">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Title -->
+        <TextBlock Grid.Row="0" 
+                   Text="Air Quality Statistical Analysis" 
                    FontSize="24" 
-                   HorizontalAlignment="Center" 
-                   VerticalAlignment="Center"/>
+                   FontWeight="Bold" 
+                   Margin="0,0,0,15"/>
+
+        <!-- Data Loading Section -->
+        <GroupBox Grid.Row="1" Header="Data Loading" Margin="0,0,0,10">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="100"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Row 0: Station Selection -->
+                <TextBlock Grid.Row="0" Grid.Column="0" 
+                           Text="Station:" 
+                           VerticalAlignment="Center" 
+                           Margin="0,0,10,0"/>
+                
+                <ComboBox Grid.Row="0" Grid.Column="1" 
+                          ItemsSource="{Binding Stations}"
+                          SelectedItem="{Binding SelectedStation}"
+                          DisplayMemberPath="Name"
+                          Margin="0,0,10,0"
+                          Height="25"/>
+
+                <TextBlock Grid.Row="0" Grid.Column="2" 
+                           Text="Month:" 
+                           VerticalAlignment="Center" 
+                           Margin="0,0,5,0"/>
+                
+                <ComboBox Grid.Row="0" Grid.Column="3" 
+                          ItemsSource="{Binding AvailableMonths}"
+                          SelectedItem="{Binding SelectedMonth}"
+                          Margin="0,0,10,0"
+                          Height="25"/>
+
+                <TextBlock Grid.Row="0" Grid.Column="4" 
+                           Text="Year:" 
+                           VerticalAlignment="Center" 
+                           Margin="0,0,5,0"/>
+                
+                <ComboBox Grid.Row="0" Grid.Column="5" 
+                          ItemsSource="{Binding AvailableYears}"
+                          SelectedItem="{Binding SelectedYear}"
+                          Margin="0,0,10,0"
+                          Height="25"/>
+
+                <Button Grid.Row="0" Grid.Column="6" 
+                        Content="Load Data" 
+                        Command="{Binding LoadDataCommand}"
+                        Padding="15,5"
+                        Height="25"/>
+
+                <!-- Row 1: Action Buttons -->
+                <StackPanel Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="7" 
+                            Orientation="Horizontal" 
+                            HorizontalAlignment="Right"
+                            Margin="0,10,0,0">
+                    <Button Content="Refresh Stations" 
+                            Command="{Binding LoadStationsCommand}"
+                            Padding="10,5"
+                            Margin="0,0,5,0"/>
+                    <Button Content="Clear All Data" 
+                            Command="{Binding ClearDataCommand}"
+                            Padding="10,5"/>
+                </StackPanel>
+            </Grid>
+        </GroupBox>
+
+        <!-- Loaded Data Display -->
+        <GroupBox Grid.Row="2" Header="Loaded Data" Margin="0,0,0,10">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+
+                <ListBox Grid.Row="0" 
+                         ItemsSource="{Binding LoadedDataGroups}"
+                         DisplayMemberPath="DisplayText"
+                         Margin="5"
+                         FontFamily="Consolas"
+                         ScrollViewer.HorizontalScrollBarVisibility="Auto"/>
+
+                <TextBlock Grid.Row="1" 
+                           Text="{Binding LoadedDataGroups.Count, StringFormat='Total groups loaded: {0}'}"
+                           Margin="5"
+                           FontStyle="Italic"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Statistics Section -->
+        <GroupBox Grid.Row="3" Header="Statistical Analysis" Margin="0,0,0,10">
+            <Grid Margin="10">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="Auto"/>
+                </Grid.RowDefinitions>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+
+                <!-- Method Selection -->
+                <TextBlock Grid.Row="0" Grid.Column="0" 
+                           Text="Method:" 
+                           VerticalAlignment="Center" 
+                           Margin="0,0,10,0"/>
+                
+                <ComboBox Grid.Row="0" Grid.Column="1" 
+                          ItemsSource="{Binding StatisticsMethods}"
+                          SelectedItem="{Binding SelectedStatisticsMethod}"
+                          Margin="0,0,10,0"
+                          Height="25"/>
+
+                <Button Grid.Row="0" Grid.Column="2" 
+                        Content="Calculate" 
+                        Command="{Binding ApplyStatisticsCommand}"
+                        Padding="20,5"
+                        Height="25"/>
+
+                <!-- Result Display -->
+                <TextBlock Grid.Row="1" Grid.Column="0" 
+                           Text="Result:" 
+                           VerticalAlignment="Top" 
+                           Margin="0,10,10,0"/>
+                
+                <TextBox Grid.Row="1" Grid.Column="1" Grid.ColumnSpan="2"
+                         Text="{Binding StatisticsResult, Mode=OneWay}"
+                         IsReadOnly="True"
+                         TextWrapping="Wrap"
+                         MinHeight="50"
+                         Margin="0,10,0,0"
+                         Background="#F0F0F0"
+                         Padding="5"
+                         FontWeight="SemiBold"/>
+
+                <!-- Export Button -->
+                <Button Grid.Row="2" Grid.Column="2" 
+                        Content="Export to CSV" 
+                        Command="{Binding ExportToCsvCommand}"
+                        Padding="15,5"
+                        Margin="0,10,0,0"/>
+            </Grid>
+        </GroupBox>
+
+        <!-- Status Bar -->
+        <Border Grid.Row="4" 
+                Background="#E0E0E0" 
+                BorderBrush="#CCCCCC" 
+                BorderThickness="0,1,0,0"
+                Padding="10,5">
+            <TextBlock Text="{Binding StatusMessage}" 
+                       FontStyle="Italic"/>
+        </Border>
     </Grid>
 </Window>

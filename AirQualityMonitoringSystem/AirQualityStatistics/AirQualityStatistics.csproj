@@ -101,6 +101,10 @@
     <None Include="Services\StatisticsContext.cs" />
     <None Include="Helpers\RelayCommand.cs" />
     <None Include="ViewModels\BaseViewModel.cs" />
+    <None Include="Strategies\AveragePM25Strategy.cs" />
+    <None Include="Strategies\MaxNO2Strategy.cs" />
+    <None Include="Strategies\HazardousCountStrategy.cs" />
+    <None Include="ViewModels\StatisticsViewModel.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="App.config" />
@@ -113,6 +117,7 @@
     <Folder Include="Helpers\" />
     <Folder Include="ViewModels\" />
     <Folder Include="Views\" />
+    <Folder Include="Strategies\" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
 </Project>
