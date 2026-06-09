@@ -4,7 +4,7 @@ using AirQualityInformationSystem.Repositories;
 using LiveChartsCore;
 using LiveChartsCore.SkiaSharpView;
 using System;
-using System.Collections.Generic;
+using System.Collections.ObjectModel;
 using System.Linq;
 using System.Windows.Threading;
 
@@ -17,39 +17,16 @@ namespace AirQualityInformationSystem.ViewModels
 
         #region Chart Properties
 
-        private ISeries[] stateSeries;
-        public ISeries[] StateSeries
+        private ObservableCollection<ISeries> stateSeries;
+        public ObservableCollection<ISeries> StateSeries
         {
             get => stateSeries;
-            set { stateSeries = value; OnPropertyChanged(); }
-        }
-
-        private int goodCount;
-        public int GoodCount
-        {
-            get => goodCount;
-            private set { goodCount = value; OnPropertyChanged(); }
-        }
-
-        private int moderateCount;
-        public int ModerateCount
-        {
-            get => moderateCount;
-            private set { moderateCount = value; OnPropertyChanged(); }
-        }
-
-        private int unhealthyCount;
-        public int UnhealthyCount
-        {
-            get => unhealthyCount;
-            private set { unhealthyCount = value; OnPropertyChanged(); }
-        }
-
-        private int hazardousCount;
-        public int HazardousCount
-        {
-            get => hazardousCount;
-            private set { hazardousCount = value; OnPropertyChanged(); }
+            set
+            {
+                stateSeries = value;
+                OnPropertyChanged();
+                System.Diagnostics.Debug.WriteLine($"StateSeries property changed, Count={value?.Count ?? 0}");
+            }
         }
 
         #endregion
@@ -58,7 +35,10 @@ namespace AirQualityInformationSystem.ViewModels
         {
             this.readingRepo = readingRepo;
 
-            // Timer za periodicno azuriranje chart-a
+            // Initialize collection first
+            StateSeries = new ObservableCollection<ISeries>();
+
+            // Timer
             chartUpdateTimer = new DispatcherTimer
             {
                 Interval = TimeSpan.FromSeconds(5)
@@ -66,87 +46,89 @@ namespace AirQualityInformationSystem.ViewModels
             chartUpdateTimer.Tick += (s, e) => Update();
             chartUpdateTimer.Start();
 
-            // Inicijalno azuriranje
+            // Initial update
             Update();
         }
 
-        /// <summary>
-        /// IObserver implementacija - poziva se kada se promene readings
-        /// </summary>
         public void Update()
         {
             var readings = readingRepo.GetAll().ToList();
 
-            GoodCount = readings.Count(r => r.State == AirQualityState.Good);
-            ModerateCount = readings.Count(r => r.State == AirQualityState.Moderate);
-            UnhealthyCount = readings.Count(r => r.State == AirQualityState.Unhealthy);
-            HazardousCount = readings.Count(r => r.State == AirQualityState.Hazardous);
+            var goodCount = readings.Count(r => r.State == AirQualityState.Good);
+            var moderateCount = readings.Count(r => r.State == AirQualityState.Moderate);
+            var unhealthyCount = readings.Count(r => r.State == AirQualityState.Unhealthy);
+            var hazardousCount = readings.Count(r => r.State == AirQualityState.Hazardous);
 
             System.Diagnostics.Debug.WriteLine(
-                $"Chart Update: Good={GoodCount}, Moderate={ModerateCount}, " +
-                $"Unhealthy={UnhealthyCount}, Hazardous={HazardousCount}");
+                $"Chart Update: Good={goodCount}, Moderate={moderateCount}, " +
+                $"Unhealthy={unhealthyCount}, Hazardous={hazardousCount}");
 
-            UpdateChart();
+            UpdateChart(goodCount, moderateCount, unhealthyCount, hazardousCount);
         }
 
-        /// <summary>
-        /// Azurira LiveCharts prikaz
-        /// </summary>
+        // Overload bez parametara
         public void UpdateChart()
         {
-            var seriesList = new List<ISeries>();
+            Update();
+        }
 
-            if (GoodCount > 0)
+        private void UpdateChart(int good, int moderate, int unhealthy, int hazardous)
+        {
+            StateSeries.Clear();
+
+            if (good > 0)
             {
-                seriesList.Add(new PieSeries<int>
+                StateSeries.Add(new PieSeries<double>
                 {
-                    Values = new[] { GoodCount },
-                    Name = $"Good ({GoodCount})"
+                    Values = new double[] { good },
+                    Name = $"Good ({good})"
                 });
             }
 
-            if (ModerateCount > 0)
+            if (moderate > 0)
             {
-                seriesList.Add(new PieSeries<int>
+                StateSeries.Add(new PieSeries<double>
                 {
-                    Values = new[] { ModerateCount },
-                    Name = $"Moderate ({ModerateCount})"
+                    Values = new double[] { moderate },
+                    Name = $"Moderate ({moderate})"
                 });
             }
 
-            if (UnhealthyCount > 0)
+            if (unhealthy > 0)
             {
-                seriesList.Add(new PieSeries<int>
+                StateSeries.Add(new PieSeries<double>
                 {
-                    Values = new[] { UnhealthyCount },
-                    Name = $"Unhealthy ({UnhealthyCount})"
+                    Values = new double[] { unhealthy },
+                    Name = $"Unhealthy ({unhealthy})"
                 });
             }
 
-            if (HazardousCount > 0)
+            if (hazardous > 0)
             {
-                seriesList.Add(new PieSeries<int>
+                StateSeries.Add(new PieSeries<double>
                 {
-                    Values = new[] { HazardousCount },
-                    Name = $"Hazardous ({HazardousCount})"
+                    Values = new double[] { hazardous },
+                    Name = $"Hazardous ({hazardous})"
                 });
             }
 
-            if (seriesList.Count == 0)
+            // If no data
+            if (StateSeries.Count == 0)
             {
-                seriesList.Add(new PieSeries<int>
+                StateSeries.Add(new PieSeries<double>
                 {
-                    Values = new[] { 1 },
+                    Values = new double[] { 1 },
                     Name = "No Data"
                 });
             }
 
-            StateSeries = seriesList.ToArray();
+            System.Diagnostics.Debug.WriteLine($"✓ Chart series updated: {StateSeries.Count} series");
+            foreach (var series in StateSeries)
+            {
+                System.Diagnostics.Debug.WriteLine($"  - {series.Name}");
+            }
         }
 
-        /// <summary>
-        /// Zaustavi timer kada ViewModel nije vise potreban
-        /// </summary>
         public void StopTimer()
         {
             chartUpdateTimer?.Stop();

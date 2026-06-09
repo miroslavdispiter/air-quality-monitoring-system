@@ -6,14 +6,89 @@
              xmlns:lvc="clr-namespace:LiveChartsCore.SkiaSharpView.WPF;assembly=LiveChartsCore.SkiaSharpView.WPF"
              mc:Ignorable="d"
              d:DesignHeight="600" 
-             d:DesignWidth="800">
+             d:DesignWidth="800"
+             Background="White">
 
-    <GroupBox Header="Air Quality State Distribution" 
-              Margin="10">
-        <lvc:PieChart Series="{Binding StateSeries}"
-                      LegendPosition="Right"
-                      Width="700"
-                      Height="500"/>
-    </GroupBox>
+    <Grid Margin="0">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
 
+        <!-- Title -->
+        <TextBlock Grid.Row="0" 
+                   Text="Air Quality State Distribution" 
+                   FontSize="20" 
+                   FontWeight="Bold" 
+                   Margin="20,15,20,15"
+                   HorizontalAlignment="Center"/>
+
+        <!-- Main Container -->
+        <Grid Grid.Row="1" Margin="0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+
+            <!-- Chart Container - CENTRIRAN -->
+            <Grid Grid.Row="0" 
+                  HorizontalAlignment="Center"
+                  VerticalAlignment="Center"
+                  Width="400"
+                  Height="300"
+                  Margin="0,20,0,20">
+
+                <lvc:PieChart x:Name="Chart"
+                              Series="{Binding StateSeries}"
+                              HorizontalAlignment="Stretch"
+                              VerticalAlignment="Stretch"
+                              Padding="0"
+                              LegendPosition="Bottom"
+                              AnimationsSpeed="00:00:00.800"/>
+            </Grid>
+
+            <!-- Legend Info -->
+            <StackPanel Grid.Row="1" 
+                       HorizontalAlignment="Center"
+                       Margin="0,10,0,20"
+                       Width="500">
+                <TextBlock Text="Legend:"
+                          FontWeight="Bold"
+                          Margin="0,0,0,10"
+                          HorizontalAlignment="Center"/>
+
+                <Grid Margin="0,0,0,5">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                              Text="● Good: Satisfactory"
+                              FontSize="11"
+                              Margin="5,0,5,0"/>
+                    <TextBlock Grid.Column="1"
+                              Text="● Moderate: Acceptable"
+                              FontSize="11"
+                              Margin="5,0,5,0"/>
+                </Grid>
+
+                <Grid Margin="0,0,0,0">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <TextBlock Grid.Column="0"
+                              Text="● Unhealthy: Sensitive groups"
+                              FontSize="11"
+                              Margin="5,0,5,0"/>
+                    <TextBlock Grid.Column="1"
+                              Text="● Hazardous: Health effects"
+                              FontSize="11"
+                              Margin="5,0,5,0"/>
+                </Grid>
+            </StackPanel>
+        </Grid>
+    </Grid>
 </UserControl>
