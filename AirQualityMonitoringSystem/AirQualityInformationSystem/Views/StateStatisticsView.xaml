@@ -30,7 +30,7 @@
                 <RowDefinition Height="Auto"/>
             </Grid.RowDefinitions>
 
-            <!-- Chart Container - CENTRIRAN -->
+            <!-- Chart Container -->
             <Grid Grid.Row="0" 
                   HorizontalAlignment="Center"
                   VerticalAlignment="Center"

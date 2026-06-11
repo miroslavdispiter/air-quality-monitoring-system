@@ -52,7 +52,7 @@ namespace AirQualityInformationSystem.Helpers
                 {
                     Id = Guid.NewGuid(),
                     StationId = stations[0].Id,
-                    ReadingTime = new DateTime(2024, month, 15, 10, 0, 0),
+                    ReadingTime = new DateTime(2026, month, 15, 10, 0, 0),
                     PM25 = 12.5 + month * 5,
                     NO2Level = 35.2 + month * 3,
                     OzoneLevel = 45.1
@@ -62,7 +62,7 @@ namespace AirQualityInformationSystem.Helpers
                 {
                     Id = Guid.NewGuid(),
                     StationId = stations[1].Id,
-                    ReadingTime = new DateTime(2024, month, 15, 11, 0, 0),
+                    ReadingTime = new DateTime(2026, month, 15, 11, 0, 0),
                     PM25 = 28.3 + month * 4,
                     NO2Level = 65.7 + month * 2,
                     OzoneLevel = 52.3
@@ -72,7 +72,7 @@ namespace AirQualityInformationSystem.Helpers
                 {
                     Id = Guid.NewGuid(),
                     StationId = stations[2].Id,
-                    ReadingTime = new DateTime(2024, month, 15, 12, 0, 0),
+                    ReadingTime = new DateTime(2026, month, 15, 12, 0, 0),
                     PM25 = 82.6 - month * 2,
                     NO2Level = 95.4 - month,
                     OzoneLevel = 78.9

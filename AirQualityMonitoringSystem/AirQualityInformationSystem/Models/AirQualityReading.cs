@@ -112,12 +112,8 @@ namespace AirQualityInformationSystem.Models
 
             currentState.Handle(this);
 
-            // Notify samo ako se stanje promenilo
             if (previousState != State)
             {
-                System.Diagnostics.Debug.WriteLine(
-                    $"  ► State changed: {previousState} → {State} " +
-                    $"(PM2.5={PM25:F1}, NO2={NO2Level:F1})");
                 NotifyObservers();
             }
         }

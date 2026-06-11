@@ -141,9 +141,8 @@ namespace AirQualityInformationSystem.ViewModels
 
             RefreshAllViewModels();
 
-            // Debug output
             var readings = readingRepo.GetAll().ToList();
-            System.Diagnostics.Debug.WriteLine($"\n📋 Initial Data:");
+            System.Diagnostics.Debug.WriteLine($"\nInitial Data:");
             System.Diagnostics.Debug.WriteLine($"  Total Readings: {readings.Count}");
             System.Diagnostics.Debug.WriteLine($"  Good: {readings.Count(r => r.State == AirQualityState.Good)}");
             System.Diagnostics.Debug.WriteLine($"  Moderate: {readings.Count(r => r.State == AirQualityState.Moderate)}");
