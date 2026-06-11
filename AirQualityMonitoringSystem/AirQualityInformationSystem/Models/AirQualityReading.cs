@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Runtime.Serialization;
 using AirQualityInformationSystem.Interfaces;
 using AirQualityInformationSystem.States;
@@ -7,10 +9,15 @@ using AirQualityInformationSystem.States;
 namespace AirQualityInformationSystem.Models
 {
     [DataContract(Namespace = "http://airquality.models/2024")]
-    public class AirQualityReading : ISubject
+    public class AirQualityReading : ISubject, INotifyPropertyChanged
     {
         private readonly List<IObserver> observers = new List<IObserver>();
         private IAirQualityState currentState;
+
+        private double pm25;
+        private double no2Level;
+        private double ozoneLevel;
+        private AirQualityState state;
 
         [DataMember]
         public Guid Id { get; set; }
@@ -22,16 +29,67 @@ namespace AirQualityInformationSystem.Models
         public DateTime ReadingTime { get; set; }
 
         [DataMember]
-        public double PM25 { get; set; }
+        public double PM25
+        {
+            get => pm25;
+            set
+            {
+                if (pm25 != value)
+                {
+                    pm25 = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         [DataMember]
-        public double NO2Level { get; set; }
+        public double NO2Level
+        {
+            get => no2Level;
+            set
+            {
+                if (no2Level != value)
+                {
+                    no2Level = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         [DataMember]
-        public double OzoneLevel { get; set; }
+        public double OzoneLevel
+        {
+            get => ozoneLevel;
+            set
+            {
+                if (ozoneLevel != value)
+                {
+                    ozoneLevel = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         [DataMember]
-        public AirQualityState State { get; set; }
+        public AirQualityState State
+        {
+            get => state;
+            set
+            {
+                if (state != value)
+                {
+                    state = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
+        public event PropertyChangedEventHandler PropertyChanged;
+
+        protected void OnPropertyChanged([CallerMemberName] string name = null)
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(name));
+        }
 
         public AirQualityReading()
         {
@@ -41,6 +99,8 @@ namespace AirQualityInformationSystem.Models
 
         public void EvaluateState()
         {
+            var previousState = State;
+
             if (PM25 < 15 && NO2Level < 40)
                 currentState = new GoodState();
             else if (PM25 < 35 && NO2Level < 80)
@@ -51,12 +111,23 @@ namespace AirQualityInformationSystem.Models
                 currentState = new HazardousState();
 
             currentState.Handle(this);
-            NotifyObservers();
+
+            // Notify samo ako se stanje promenilo
+            if (previousState != State)
+            {
+                System.Diagnostics.Debug.WriteLine(
+                    $"  ► State changed: {previousState} → {State} " +
+                    $"(PM2.5={PM25:F1}, NO2={NO2Level:F1})");
+                NotifyObservers();
+            }
         }
 
         public void Register(IObserver observer)
         {
-            observers.Add(observer);
+            if (!observers.Contains(observer))
+            {
+                observers.Add(observer);
+            }
         }
 
         public void Unregister(IObserver observer)

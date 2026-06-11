@@ -6,14 +6,12 @@ using LiveChartsCore.SkiaSharpView;
 using System;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Windows.Threading;
 
 namespace AirQualityInformationSystem.ViewModels
 {
     public class StateStatisticsViewModel : BaseViewModel, IObserver
     {
         private readonly AirQualityRepository readingRepo;
-        private readonly DispatcherTimer chartUpdateTimer;
 
         #region Chart Properties
 
@@ -25,7 +23,6 @@ namespace AirQualityInformationSystem.ViewModels
             {
                 stateSeries = value;
                 OnPropertyChanged();
-                System.Diagnostics.Debug.WriteLine($"StateSeries property changed, Count={value?.Count ?? 0}");
             }
         }
 
@@ -34,20 +31,28 @@ namespace AirQualityInformationSystem.ViewModels
         public StateStatisticsViewModel(AirQualityRepository readingRepo)
         {
             this.readingRepo = readingRepo;
-
-            // Initialize collection first
             StateSeries = new ObservableCollection<ISeries>();
 
-            // Timer
-            chartUpdateTimer = new DispatcherTimer
-            {
-                Interval = TimeSpan.FromSeconds(5)
-            };
-            chartUpdateTimer.Tick += (s, e) => Update();
-            chartUpdateTimer.Start();
+            System.Diagnostics.Debug.WriteLine("✓ StateStatisticsViewModel created");
+        }
 
-            // Initial update
+        public void Initialize()
+        {
+            SubscribeToReadings();
+
             Update();
+
+            System.Diagnostics.Debug.WriteLine("✓ StateStatisticsViewModel initialized as Observer");
+        }
+
+        private void SubscribeToReadings()
+        {
+            var readings = readingRepo.GetAll().ToList();
+            foreach (var reading in readings)
+            {
+                reading.Register(this);
+            }
+            System.Diagnostics.Debug.WriteLine($"✓ Subscribed to {readings.Count} readings");
         }
 
         public void Update()
@@ -60,13 +65,12 @@ namespace AirQualityInformationSystem.ViewModels
             var hazardousCount = readings.Count(r => r.State == AirQualityState.Hazardous);
 
             System.Diagnostics.Debug.WriteLine(
-                $"Chart Update: Good={goodCount}, Moderate={moderateCount}, " +
+                $"📊 Chart Update: Good={goodCount}, Moderate={moderateCount}, " +
                 $"Unhealthy={unhealthyCount}, Hazardous={hazardousCount}");
 
             UpdateChart(goodCount, moderateCount, unhealthyCount, hazardousCount);
         }
 
-        // Overload bez parametara
         public void UpdateChart()
         {
             Update();
@@ -81,7 +85,11 @@ namespace AirQualityInformationSystem.ViewModels
                 StateSeries.Add(new PieSeries<double>
                 {
                     Values = new double[] { good },
-                    Name = $"Good ({good})"
+                    Name = $"Good ({good})",
+                    DataLabelsSize = 14,
+                    DataLabelsPaint = new LiveChartsCore.SkiaSharpView.Painting.SolidColorPaint(
+                        new SkiaSharp.SKColor(50, 50, 50)),
+                    DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle
                 });
             }
 
@@ -90,7 +98,9 @@ namespace AirQualityInformationSystem.ViewModels
                 StateSeries.Add(new PieSeries<double>
                 {
                     Values = new double[] { moderate },
-                    Name = $"Moderate ({moderate})"
+                    Name = $"Moderate ({moderate})",
+                    DataLabelsSize = 14,
+                    DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle
                 });
             }
 
@@ -99,7 +109,9 @@ namespace AirQualityInformationSystem.ViewModels
                 StateSeries.Add(new PieSeries<double>
                 {
                     Values = new double[] { unhealthy },
-                    Name = $"Unhealthy ({unhealthy})"
+                    Name = $"Unhealthy ({unhealthy})",
+                    DataLabelsSize = 14,
+                    DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle
                 });
             }
 
@@ -108,11 +120,12 @@ namespace AirQualityInformationSystem.ViewModels
                 StateSeries.Add(new PieSeries<double>
                 {
                     Values = new double[] { hazardous },
-                    Name = $"Hazardous ({hazardous})"
+                    Name = $"Hazardous ({hazardous})",
+                    DataLabelsSize = 14,
+                    DataLabelsPosition = LiveChartsCore.Measure.PolarLabelsPosition.Middle
                 });
             }
 
-            // If no data
             if (StateSeries.Count == 0)
             {
                 StateSeries.Add(new PieSeries<double>
@@ -122,16 +135,14 @@ namespace AirQualityInformationSystem.ViewModels
                 });
             }
 
-            System.Diagnostics.Debug.WriteLine($"✓ Chart series updated: {StateSeries.Count} series");
-            foreach (var series in StateSeries)
-            {
-                System.Diagnostics.Debug.WriteLine($"  - {series.Name}");
-            }
+            System.Diagnostics.Debug.WriteLine($"✓ Chart updated with {StateSeries.Count} series");
         }
 
-        public void StopTimer()
+        public void RegisterNewReading(AirQualityReading reading)
         {
-            chartUpdateTimer?.Stop();
+            reading.Register(this);
+            Update();
+            System.Diagnostics.Debug.WriteLine($"✓ Registered new reading as observer");
         }
     }
 }

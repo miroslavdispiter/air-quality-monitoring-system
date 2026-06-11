@@ -14,3 +14,15 @@
 2026-06-08 22:18:43 - WCF Service started successfully
 2026-06-08 22:18:43 - WCF Service initialized with 3 stations
 2026-06-08 22:18:43 - Application started
+2026-06-11 20:19:47 - Loaded 3 default stations and 9 default readings
+2026-06-11 20:19:48 - WCF Service started successfully
+2026-06-11 20:19:48 - WCF Service initialized with 3 stations
+2026-06-11 20:19:48 - Application started
+2026-06-11 20:23:55 - Loaded 3 default stations and 9 default readings
+2026-06-11 20:23:55 - Failed to start WCF Service: The ChannelDispatcher at 'net.pipe://localhost/AirQualityService' with contract(s) '"IAirQualityService"' is unable to open its IChannelListener.
+2026-06-11 20:24:00 - Application started
+2026-06-11 20:30:45 - Loaded 3 default stations and 9 default readings
+2026-06-11 20:30:46 - WCF Service started successfully
+2026-06-11 20:30:46 - WCF Service initialized with 3 stations
+2026-06-11 20:30:46 - Simulation started
+2026-06-11 20:31:28 - Application started

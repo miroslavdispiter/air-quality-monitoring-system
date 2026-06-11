@@ -19,12 +19,26 @@
         </Grid.RowDefinitions>
 
         <!-- Top Menu Bar -->
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-            <Button Content="Save Data" Command="{Binding SaveDataCommand}" Padding="10,5" Margin="0,0,5,0"/>
-            <Button Content="Load Data" Command="{Binding LoadDataCommand}" Padding="10,5" Margin="0,0,5,0"/>
-            <Button Content="Undo" Command="{Binding UndoCommand}" Padding="10,5" Margin="0,0,5,0"/>
-            <Button Content="Redo" Command="{Binding RedoCommand}" Padding="10,5" Margin="0,0,5,0"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button Content="Save Data" Command="{Binding SaveDataCommand}" Padding="10,5" Margin="0,0,5,0"/>
+                <Button Content="Load Data" Command="{Binding LoadDataCommand}" Padding="10,5" Margin="0,0,5,0"/>
+                <Button Content="Undo" Command="{Binding UndoCommand}" Padding="10,5" Margin="0,0,5,0"/>
+                <Button Content="Redo" Command="{Binding RedoCommand}" Padding="10,5" Margin="0,0,5,0"/>
+            </StackPanel>
+
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <TextBlock Text="Simulation:" VerticalAlignment="Center" Margin="0,0,10,0" FontWeight="Bold"/>
+                <TextBlock Text="{Binding SimulationStatusText}" VerticalAlignment="Center" Margin="0,0,10,0" FontSize="14"/>
+                <Button Content="▶ Start" Command="{Binding StartSimulationCommand}" Padding="10,5" Margin="0,0,5,0" Background="#4CAF50" Foreground="White"/>
+                <Button Content="⏸ Stop" Command="{Binding StopSimulationCommand}" Padding="10,5" Background="#f44336" Foreground="White"/>
+            </StackPanel>
+        </Grid>
 
         <!-- Main Content -->
         <TabControl Grid.Row="1">

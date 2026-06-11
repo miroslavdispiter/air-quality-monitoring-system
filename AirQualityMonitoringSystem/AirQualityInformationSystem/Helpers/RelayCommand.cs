@@ -10,19 +10,25 @@ namespace AirQualityInformationSystem.Helpers
 
         public RelayCommand(Action execute, Func<bool> canExecute = null)
         {
-            this.execute = execute;
+            this.execute = execute ?? throw new ArgumentNullException(nameof(execute));
             this.canExecute = canExecute;
         }
 
-        public bool CanExecute(object parameter)
-            => canExecute == null || canExecute();
-
-        public void Execute(object parameter)
-            => execute();
-
         public event EventHandler CanExecuteChanged;
 
+        public bool CanExecute(object parameter)
+        {
+            return canExecute == null || canExecute();
+        }
+
+        public void Execute(object parameter)
+        {
+            execute();
+        }
+
         public void RaiseCanExecuteChanged()
-            => CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        {
+            CanExecuteChanged?.Invoke(this, EventArgs.Empty);
+        }
     }
 }

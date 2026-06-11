@@ -152,6 +152,7 @@ namespace AirQualityInformationSystem.ViewModels
         #endregion
 
         public event Action OnDataChanged;
+        public event Action<AirQualityReading> OnReadingAdded;
 
         public AirQualityReadingsViewModel(
             AirQualityRepository readingRepo,
@@ -213,6 +214,7 @@ namespace AirQualityInformationSystem.ViewModels
                 MessageBox.Show("Reading added successfully!", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
 
                 OnDataChanged?.Invoke();
+                OnReadingAdded?.Invoke(reading);
             }
             catch (Exception ex)
             {
